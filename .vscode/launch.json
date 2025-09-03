@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Streamlit app",
+      "type": "python",
+      "request": "launch",
+      "module": "streamlit",
+      "args": [
+        "run",
+        "streamlit_app.py"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Debug equalprop/ui/app.py",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/equalprop/ui/app.py",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}
+
