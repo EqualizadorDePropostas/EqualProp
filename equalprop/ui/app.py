@@ -1,4 +1,6 @@
-﻿import os
+﻿# equalprop/ui/app.py
+
+import os
 import json
 import tempfile
 import streamlit as st
@@ -12,180 +14,337 @@ from equalprop.reports.comparison import generate_comparison_report
 from equalprop.reports.consolidate import consolidate_reports
 
 
+# =========================
+# ------ STYLES/CSS -------
+# =========================
+CSS = """
+<style>
+:root { --black:#000; --muted:#6b7280; --blue:#1e40ff; --red:#dc2626; --green:#16a34a; }
+html, body, [class^="css"] { color: var(--black) !important; }
+.block-container { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+
+/* Tipografia exigida */
+h1.app-title { font-size:36px !important; font-weight:800 !important; margin:0 0 4px 0 !important; }
+p.subtitle-18b { font-size:18px !important; font-weight:700 !important; margin:0 0 12px 0 !important; }
+p.body-18 { font-size:18px !important; font-weight:400 !important; margin:0 0 12px 0 !important; }
+
+/* Linhas compactas */
+.row { display:flex; align-items:center; gap:10px; margin:6px 0; }
+.row .label { font-size:18px; white-space:nowrap; }
+.row .value { font-size:18px; }
+.row .value.muted { color: var(--muted) !important; }
+
+/* Uploader: esconder dropzone e deixar só "Browse files" pequeno */
+div[data-testid="stFileUploader"] section { padding:0 !important; }
+div[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"]{
+  padding:0 !important; border:none !important; background:transparent !important; min-height:auto !important;
+}
+div[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] > div:first-child { display:none !important; }
+div[data-testid="stFileUploader"] small { display:none !important; }
+.stFileUploader label { font-size:18px !important; }
+
+/* Botões compactos */
+.stButton > button { padding:6px 14px !important; border-radius:6px !important; font-size:18px !important; }
+.btn-danger { border:1px solid var(--red) !important; }
+.btn-danger:before { content:"\\1F534  "; }  /* bolinha vermelha */
+.btn-download:before { content:"\\2B07\\FE0F  "; } /* seta para baixo */
+
+/* Spinner inline */
+.spinner-wrap { display:flex; align-items:center; gap:10px; margin-top: 6px; }
+.spinner {
+  width:24px; height:24px; border:3px solid #e5e7eb; border-top-color:#9ca3af;
+  border-radius:50%; animation:spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Barra de progresso AZUL custom */
+.progress-wrap { width:100%; height:10px; background:#e5e7eb; border-radius:6px; overflow:hidden; margin-top:6px; }
+.progress-fill { height:100%; background: var(--blue); width:0%; transition:width .2s ease; }
+</style>
+"""
+
+# =========================
+# ------ STATE/UTIL -------
+# =========================
+def _ensure_state():
+    st.session_state.setdefault("stage", "idle")  # idle | selected | running | done
+    st.session_state.setdefault("rfp_file", None)
+    st.session_state.setdefault("proposal_files", [])
+    st.session_state.setdefault("report_xlsx", None)
+
+def _reset_all():
+    for k in list(st.session_state.keys()):
+        if k.startswith(("_", "FormSubmitter")):
+            continue
+        del st.session_state[k]
+    st.session_state["stage"] = "idle"
+    st.rerun()
+
+def _header():
+    st.markdown(CSS, unsafe_allow_html=True)
+    st.markdown('<h1 class="app-title">Equalizador de Propostas</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle-18b">Perla Cabral Ferreira</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="body-18">Usa IA para gerar um relatório comparativo dos fornecedores a partir de uma '
+        'requisição de compra e das respectivas propostas comerciais.</p>',
+        unsafe_allow_html=True
+    )
+
+def _uploader_line(label_text, key, multiple=False):
+    c1, c2 = st.columns([0.75, 0.25], vertical_alignment="center")
+    with c1:
+        st.markdown(f'<div class="row"><span class="label">{label_text} :</span></div>', unsafe_allow_html=True)
+    with c2:
+        st.file_uploader("", type=["pdf"], accept_multiple_files=multiple, key=key, label_visibility="collapsed")
+
+def _selected_line(label_text, value_text, clear_key):
+    c1, c2 = st.columns([0.92, 0.08], vertical_alignment="center")
+    with c1:
+        st.markdown(
+            f'<div class="row"><span class="label">{label_text} :</span>'
+            f'<span class="value">{value_text}</span></div>',
+            unsafe_allow_html=True
+        )
+    with c2:
+        if st.button("✖", key=clear_key):
+            if clear_key == "clear_rfp":
+                st.session_state["rfp_file"] = None
+            else:
+                st.session_state["proposal_files"] = []
+            st.session_state["stage"] = "idle"
+            st.rerun()
+
+def _selected_line_muted(label_text, value_text):
+    st.markdown(
+        f'<div class="row"><span class="label">{label_text} :</span>'
+        f'<span class="value muted">{value_text}</span></div>',
+        unsafe_allow_html=True
+    )
+
+def _join_names(files):
+    if not files:
+        return ""
+    if isinstance(files, list):
+        return "; ".join([f.name for f in files])
+    return files.name
+
+def _dangerize(button_label, key, width=True):
+    clicked = st.button(button_label, key=key, use_container_width=width)
+    st.markdown("""
+    <script>
+    const btns = window.parent.document.querySelectorAll('button');
+    btns.forEach(b=>{ if (b.innerText.trim().startsWith('Interromper')) b.classList.add('btn-danger'); });
+    </script>
+    """, unsafe_allow_html=True)
+    return clicked
+
+def _render_blue_progress(ph, pct: int):
+    pct = max(0, min(int(pct), 100))
+    ph.markdown(
+        f'<div class="progress-wrap"><div class="progress-fill" style="width:{pct}%"></div></div>',
+        unsafe_allow_html=True
+    )
+
+def _merge_results(acc, part):
+    """Tenta mesclar resultados parciais em um único objeto."""
+    if acc is None:
+        return part
+    try:
+        if isinstance(acc, dict) and isinstance(part, dict):
+            acc.update(part)
+            return acc
+        if isinstance(acc, list) and isinstance(part, list):
+            acc.extend(part)
+            return acc
+    except:
+        pass
+    return part  # fallback simples
+
+
+# =========================
+# --------- MAIN ----------
+# =========================
 def main(model, gen_config):
-    st.set_page_config(page_title="Processador de Propostas", page_icon="🧾", layout="wide")
-    st.title("🧾 Processador de Propostas Comerciais")
-    st.write("Faça upload dos arquivos RFP/RFQ e das propostas para gerar relatórios automatizados.")
+    st.set_page_config(page_title="Equalizador de Propostas", page_icon="🧾", layout="wide")
+    _ensure_state()
+    _header()
 
-    # Upload de arquivos
-    st.header("1. Upload de Arquivos")
-    rfp_files = st.file_uploader(
-        "Selecione o arquivo RFP/RFQ (PDF ou Excel)",
-        type=["pdf", "xlsx", "xls"],
-        accept_multiple_files=False,
-        key="rfp_uploader"
-    )
+    # ---------- TELA 1 (IDLE) ----------
+    if st.session_state["stage"] == "idle":
+        _uploader_line("Requisição RFP/RFQ (um arquivo PDF)", key="rfp_upl", multiple=False)
+        _uploader_line("Propostas comerciais (vários arquivos PDF)", key="prop_upl", multiple=True)
 
-    proposal_files = st.file_uploader(
-        "Selecione os arquivos de Proposta (PDF ou Excel)",
-        type=["pdf", "xlsx", "xls"],
-        accept_multiple_files=True,
-        key="proposal_uploader"
-    )
+        rfp = st.session_state.get("rfp_upl")
+        props = st.session_state.get("prop_upl", [])
+        if rfp and props:
+            st.session_state["rfp_file"] = rfp
+            st.session_state["proposal_files"] = props
+            st.session_state["stage"] = "selected"
+            st.rerun()
+        return
 
-    if st.button("Processar Arquivos") and rfp_files and proposal_files:
-        progress_bar = st.progress(0)
-        status_text = st.empty()
+    # ---------- TELA 2 (SELECTED) ----------
+    if st.session_state["stage"] == "selected":
+        _selected_line("Requisição RFP/RFQ (um arquivo PDF)", _join_names(st.session_state["rfp_file"]), "clear_rfp")
+        _selected_line("Propostas comerciais (vários arquivos PDF)", _join_names(st.session_state["proposal_files"]), "clear_props")
 
+        c1, c2 = st.columns([0.18, 0.18])
+        with c1:
+            if st.button("Gerar relatório", key="btn_run", use_container_width=True):
+                st.session_state["stage"] = "running"
+                st.rerun()
+        with c2:
+            if _dangerize("Interromper", key="btn_abort_sel"):
+                _reset_all()
+        return
+
+    # ---------- TELA 3 (RUNNING) ----------
+    if st.session_state["stage"] == "running":
+        # Linhas com nomes (cinza)
+        _selected_line_muted("Requisição RFP/RFQ (um arquivo PDF)", _join_names(st.session_state["rfp_file"]))
+        _selected_line_muted("Propostas comerciais (vários arquivos PDF)", _join_names(st.session_state["proposal_files"]))
+
+        # Linha "Aguarde..." + Interromper
+        c1, c2 = st.columns([0.7, 0.3], vertical_alignment="center")
+        with c1:
+            st.markdown('<div class="spinner-wrap"><div class="spinner"></div><div class="body-18">Aguarde...</div></div>',
+                        unsafe_allow_html=True)
+        with c2:
+            if _dangerize("Interromper", key="btn_abort_run"):
+                _reset_all()
+
+        # Placeholders visíveis (linha de status + barra azul)
+        status_ph = st.empty()      # linha da tarefa atual
+        bar_ph = st.empty()         # barra de progresso AZUL
+
+        # ========= PIPELINE =========
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
-                status_text.text("Processando arquivos...")
+                # 1) Salvar arquivos
+                status_ph.markdown('<p class="body-18">Processando arquivos...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 5)
 
-                # Processar RFP - ler conteúdo e salvar
+                rfp = st.session_state["rfp_file"]
                 rfp_paths = []
-                if rfp_files:
-                    try:
-                        safe_name = sanitize_filename(rfp_files.name)
-                        rfp_path = os.path.join(temp_dir, safe_name)
-                        file_content = rfp_files.getvalue()
-                        with open(rfp_path, "wb") as f:
-                            f.write(file_content)
-                        rfp_paths.append(rfp_path)
-                        st.success(f"OK. RFP salvo: {safe_name}")
-                    except Exception as e:
-                        st.error(f"Erro ao salvar RFP: {str(e)}")
-                        return
+                safe_name = sanitize_filename(rfp.name)
+                rfp_path = os.path.join(temp_dir, safe_name)
+                with open(rfp_path, "wb") as f:
+                    f.write(rfp.getvalue())
+                rfp_paths.append(rfp_path)
 
-                # Processar propostas - ler conteúdo e salvar
                 proposal_paths = []
-                if proposal_files:
-                    for proposal_file in proposal_files:
-                        try:
-                            safe_name = sanitize_filename(proposal_file.name)
-                            proposal_path = os.path.join(temp_dir, safe_name)
-                            file_content = proposal_file.getvalue()
-                            with open(proposal_path, "wb") as f:
-                                f.write(file_content)
-                            proposal_paths.append(proposal_path)
-                            st.success(f"OK. Proposta salva: {safe_name}")
-                        except Exception as e:
-                            st.error(f"Erro ao salvar proposta {proposal_file.name}: {str(e)}")
-                            continue
+                for p in st.session_state["proposal_files"]:
+                    safe = sanitize_filename(p.name)
+                    p_path = os.path.join(temp_dir, safe)
+                    with open(p_path, "wb") as f:
+                        f.write(p.getvalue())
+                    proposal_paths.append(p_path)
 
-                progress_bar.progress(20)
-
-                if not rfp_paths:
-                    st.error("Nenhum arquivo RFP foi processado com sucesso.")
-                    return
-
-                if not proposal_paths:
-                    st.error("Nenhum arquivo de proposta foi processado com sucesso.")
-                    return
-
-                # Processar arquivos (converter Excel para PDF se necessário)
-                status_text.text("Convertendo arquivos para PDF...")
+                # 2) Converter p/ PDF
+                status_ph.markdown('<p class="body-18">Convertendo arquivos para PDF...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 15)
                 rfp_pdfs = process_files(rfp_paths, temp_dir)
                 proposal_pdfs = process_files(proposal_paths, temp_dir)
-
                 if not rfp_pdfs or not proposal_pdfs:
-                    st.error("Falha ao processar arquivos. Verifique os formatos.")
+                    status_ph.markdown('<p class="body-18">Erro: falha ao processar arquivos.</p>', unsafe_allow_html=True)
+                    _render_blue_progress(bar_ph, 0)
                     return
 
-                status_text.text("Enviando arquivos para o Gemini...")
-                progress_bar.progress(40)
-
-                # Upload para Gemini
+                # 3) Upload Gemini
+                status_ph.markdown('<p class="body-18">Subindo arquivos para a Gemini...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 35)
                 rfp_gemini_files = upload_pdfs_to_gemini(rfp_pdfs)
                 proposal_gemini_files = upload_pdfs_to_gemini(proposal_pdfs)
-
-                if not rfp_gemini_files:
-                    st.error("Falha no upload do RFP para o Gemini.")
+                if not rfp_gemini_files or not proposal_gemini_files:
+                    status_ph.markdown('<p class="body-18">Erro: falha no upload para a Gemini.</p>', unsafe_allow_html=True)
+                    _render_blue_progress(bar_ph, 0)
                     return
 
-                if not proposal_gemini_files:
-                    st.error("Falha no upload das propostas para o Gemini.")
-                    return
-
-                status_text.text("Extraindo PDCs do RFP...")
-                progress_bar.progress(60)
-
-                # Extrair PDCs
-                try:
-                    response = model.generate_content(
-                        contents=[pdcs_prompt, rfp_gemini_files[0]],
-                        generation_config=gen_config
-                    )
-                    pdc_descriptions = json.loads(response.text)
-                    st.success("OK. PDCs extraídos com sucesso!")
-                except Exception as e:
-                    st.error(f"Erro ao processar RFP: {str(e)}")
-                    return
-
-                status_text.text("Processando propostas comerciais...")
-                progress_bar.progress(80)
-
-                # Processar propostas
-                raw_results = process_all_proposals(
-                    model, pdc_descriptions, proposal_gemini_files,
-                    proposal_pdfs, extraction_prompt, gen_config
+                # 4) Extrair PDCs
+                status_ph.markdown('<p class="body-18">Extraindo PDCs do RFP...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 55)
+                response = model.generate_content(
+                    contents=[pdcs_prompt, rfp_gemini_files[0]],
+                    generation_config=gen_config
                 )
+                pdc_descriptions = json.loads(response.text)
 
-                status_text.text("Gerando relatórios finais...")
-                progress_bar.progress(95)
+                # 5) Processar propostas **uma por vez** mostrando o nome do PDF
+                n = len(proposal_pdfs)
+                aggregated_results = None
+                for i, (gfile, pdf_path) in enumerate(zip(proposal_gemini_files, proposal_pdfs), start=1):
+                    fname = os.path.basename(pdf_path)
+                    status_ph.markdown(
+                        f'<p class="body-18">Processando proposta: <span class="value">{fname}</span></p>',
+                        unsafe_allow_html=True
+                    )
+                    # Progresso dentro do intervalo 60→90
+                    pct = 60 + int(30 * (i-1) / max(n, 1))
+                    _render_blue_progress(bar_ph, pct)
 
-                # Gerar relatórios
-                try:
-                    suppliers_csv = generate_suppliers_report(raw_results)
-                    global_csv = generate_global_report(pdc_descriptions, raw_results)
-                    comparison_csv = generate_comparison_report(pdc_descriptions, raw_results)
-                    relatorio_final_csv, relatorio_final_xlsx = consolidate_reports()
-                except Exception as e:
-                    st.error(f"Erro ao gerar relatórios: {str(e)}")
-                    return
+                    partial = process_all_proposals(
+                        model,
+                        pdc_descriptions,
+                        [gfile],          # uma proposta por vez
+                        [pdf_path],
+                        extraction_prompt,
+                        gen_config
+                    )
+                    aggregated_results = _merge_results(aggregated_results, partial)
 
-                progress_bar.progress(100)
-                status_text.text("Processamento concluído!")
+                raw_results = aggregated_results
 
-                # Botões de download
-                st.success("OK. Processamento concluído com sucesso!")
+                # 6) Gerar relatório final (EXCEL apenas)
+                status_ph.markdown('<p class="body-18">Gerando relatório final (Excel)...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 92)
+                _ = generate_suppliers_report(raw_results)
+                _ = generate_global_report(pdc_descriptions, raw_results)
+                _ = generate_comparison_report(pdc_descriptions, raw_results)
+                _, relatorio_final_xlsx = consolidate_reports()
 
-                col1, col2 = st.columns(2)
-                with col1:
-                    try:
-                        with open(relatorio_final_csv, "rb") as file:
-                            st.download_button(
-                                label="⬇️ Baixar Relatório CSV",
-                                data=file,
-                                file_name="relatorio_consolidado.csv",
-                                mime="text/csv"
-                            )
-                    except Exception as e:
-                        st.error(f"Erro ao carregar CSV: {str(e)}")
+                st.session_state["report_xlsx"] = relatorio_final_xlsx
 
-                with col2:
-                    try:
-                        with open(relatorio_final_xlsx, "rb") as file:
-                            st.download_button(
-                                label="⬇️ Baixar Relatório Excel",
-                                data=file,
-                                file_name="relatorio_consolidado.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            )
-                    except Exception as e:
-                        st.error(f"Erro ao carregar Excel: {str(e)}")
+                status_ph.markdown('<p class="body-18">Concluído.</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 100)
 
-                # Mostrar resumo dos relatórios gerados
-                st.info("📄 Relatórios gerados:")
-                st.write(f"- Tabela 1: {suppliers_csv} - Informações dos fornecedores")
-                st.write(f"- Tabela 2: {global_csv} - Valores globais por produto")
-                st.write(f"- Tabela 3: {comparison_csv} - Comparação detalhada de produtos")
-                st.write(f"- Consolidado: {relatorio_final_csv} e {relatorio_final_xlsx}")
+                st.session_state["stage"] = "done"
+                st.rerun()
 
         except Exception as e:
-            st.error(f"Erro durante o processamento: {str(e)}")
-            st.exception(e)
-    else:
-        if not rfp_files:
-            st.warning("Selecione um arquivo RFP/RFQ")
-        if not proposal_files:
-            st.warning("Selecione pelo menos uma proposta")
+            status_ph.markdown(f'<p class="body-18">Erro: {e}</p>', unsafe_allow_html=True)
+            _render_blue_progress(bar_ph, 0)
+        return
+
+    # ---------- TELA 4 (DONE) ----------
+    if st.session_state["stage"] == "done":
+        _selected_line_muted("Requisição RFP/RFQ (um arquivo PDF)", _join_names(st.session_state["rfp_file"]))
+        _selected_line_muted("Propostas comerciais (vários arquivos PDF)", _join_names(st.session_state["proposal_files"]))
+
+        xlsx_path = st.session_state.get("report_xlsx")
+        if not xlsx_path or not os.path.exists(xlsx_path):
+            _reset_all()
+            return
+
+        c1, c2 = st.columns([0.22, 0.18])
+        with c1:
+            with open(xlsx_path, "rb") as f:
+                downloaded = st.download_button(
+                    "Baixar relatório",
+                    data=f.read(),
+                    file_name="relatorio_consolidado.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="btn_dl",
+                    use_container_width=True
+                )
+            st.markdown("""
+            <script>
+            const btns = window.parent.document.querySelectorAll('button');
+            btns.forEach(b=>{ if (b.innerText.trim().startsWith('Baixar relatório')) b.classList.add('btn-download'); });
+            </script>
+            """, unsafe_allow_html=True)
+            if downloaded:
+                _reset_all()
+        with c2:
+            if _dangerize("Interromper", key="btn_abort_done"):
+                _reset_all()
+        return
