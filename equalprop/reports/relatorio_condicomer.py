@@ -1,0 +1,347 @@
+import csv
+import json
+import unicodedata
+from typing import Any, Dict, List, Optional, Tuple
+
+
+def _norm_key(s: str) -> str:
+    """Normalize a key for robust matching.
+
+    - Lowercase
+    - Strip accents
+    - Remove spaces, underscores, dashes and dots
+    """
+    if not isinstance(s, str):
+        s = str(s)
+    s = ''.join(c for c in unicodedata.normalize('NFKD', s) if not unicodedata.combining(c))
+    s = s.lower().strip()
+    # remove separators and punctuation commonly used between words
+    s = s.replace(' ', '').replace('_', '').replace('-', '').replace('.', '')
+    return s
+
+
+def _norm_key_name_map(d: Dict[str, Any]) -> Dict[str, str]:
+    """Mapeia nomes de chaves normalizados -> originais para busca resiliente."""
+    return {_norm_key(k): k for k in d.keys() if isinstance(k, str)}
+
+
+def _cap_first_only(text: Optional[str]) -> str:
+    """Converte para minúsculas e capitaliza somente a primeira letra.
+    Retorna 'null' para ausentes ou string 'null'.
+    """
+    if text is None:
+        return 'null'
+    s = str(text).strip()
+    if not s or s.lower() == 'null':
+        return 'null'
+    s = s.lower()
+    return s[0].upper() + s[1:]
+
+
+def _as_list_of_pairs(obj: Any) -> List[Tuple[str, str]]:
+    """Converte objeto de condições em lista de pares (chave, valor).
+
+    Aceita:
+    - lista de objetos {chave/valor} (ou key/value)
+    - dict {chave: valor}
+    - lista de pares [[chave, valor], ...]
+    """
+    pairs: List[Tuple[str, str]] = []
+
+    def _norm_key_name_map(d: Dict[str, Any]) -> Dict[str, str]:
+        return {_norm_key(k): k for k in d.keys() if isinstance(k, str)}
+
+    if isinstance(obj, list):
+        for item in obj:
+            if isinstance(item, dict):
+                idx = _norm_key_name_map(item)
+                # support a few common synonyms for key/value names
+                chave_k = (
+                    idx.get('chave') or idx.get('key') or idx.get('campo') or idx.get('nome')
+                    or idx.get('condicao') or idx.get('condicoe') or idx.get('termo') or idx.get('titulo')
+                )
+                valor_k = (
+                    idx.get('valor') or idx.get('value') or idx.get('conteudo') or idx.get('descricao')
+                    or idx.get('descricoes') or idx.get('texto') or idx.get('observacao') or idx.get('observacoes')
+                )
+                if chave_k and valor_k:
+                    v = item.get(valor_k)
+                    pairs.append((str(item.get(chave_k)), 'null' if v in (None, 'null', '') else str(v)))
+            elif isinstance(item, (list, tuple)) and len(item) >= 2:
+                pairs.append((str(item[0]), 'null' if item[1] in (None, 'null', '') else str(item[1])))
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            pairs.append((str(k), 'null' if v in (None, 'null', '') else str(v)))
+    return pairs
+
+
+def _extract_proposals(condicomer_padronizado: Any) -> List[Dict[str, str]]:
+    """Extrai até 5 propostas como dicionários {condicao: valor}.
+
+    Formatos aceitos:
+    - { caminho_pdf: { proposta: { condicoes_comerciais: [...] } } }
+    - { caminho_pdf: { condicoes_comerciais: [...] } }
+    - { "propostas": { "proposta_1": { condicoes_comerciais: [...] }, ... } }
+    - { "condicoes_comerciais": { "proposta_1": {...}, ... } }
+    - { "condicoes_comerciais": [ {"chave":..., "proposta_1":..., ...}, ... ] }
+    - valores por arquivo como string JSON ou diretamente uma lista de condições
+    """
+    result: List[Dict[str, str]] = []
+
+    # Permitir que venha como string JSON
+    if isinstance(condicomer_padronizado, (str, bytes)):
+        try:
+            condicomer_padronizado = json.loads(condicomer_padronizado)  # type: ignore[arg-type]
+        except Exception:
+            return result
+
+    # 0.a) Top-level como lista de propostas [{arquivo, proposta:{condicoes_comerciais:[...]}}]
+    if isinstance(condicomer_padronizado, list):
+        collected: List[Dict[str, str]] = []
+        for entry in condicomer_padronizado:
+            if not isinstance(entry, dict):
+                continue
+            container: Any = entry
+            pv = container.get('proposta') or container.get('proposal')
+            if isinstance(pv, str):
+                try:
+                    pv = json.loads(pv)
+                except Exception:
+                    pass
+            if isinstance(pv, dict):
+                container = pv
+            if isinstance(container, dict):
+                idx = _norm_key_name_map(container)
+                cc_key = (
+                    idx.get('condicoescomerciais') or idx.get('condicoes_comerciais') or idx.get('condicoes comerciais')
+                    or idx.get('condicoescomercial') or idx.get('termoscomerciais') or idx.get('condicoesvenda')
+                )
+                if not cc_key:
+                    for nk, orig in idx.items():
+                        if 'condic' in nk and 'comerc' in nk:
+                            cc_key = orig
+                            break
+                cc = container.get(cc_key) if cc_key else None
+                conds: Dict[str, str] = {}
+                for k, v in _as_list_of_pairs(cc):
+                    conds[k] = v
+                # Mesmo que vazio, manter a proposta para reservar colunas
+                collected.append(conds)
+        if collected:
+            return collected[:20]
+        return result
+
+    # 0) Mapa por arquivo (valores podem ser dict com 'proposta' ou já lista)
+    if 'propostas' not in condicomer_padronizado and 'condicoes_comerciais' not in condicomer_padronizado:
+        collected: List[Dict[str, str]] = []
+        for _k, v in condicomer_padronizado.items():
+            if isinstance(v, str):
+                try:
+                    v = json.loads(v)
+                except Exception:
+                    v = None
+            if isinstance(v, dict):
+                # "proposta" pode vir serializada como string
+                pv = v.get('proposta')
+                if isinstance(pv, str):
+                    try:
+                        pv = json.loads(pv)
+                    except Exception:
+                        pass
+                d = pv if isinstance(pv, dict) else v
+                idx = _norm_key_name_map(d)
+                # aceitar variantes: condicoesComerciais, condicoes comerciais, etc.
+                # tentar localizar chave de condições comerciais por variantes ou por heurística
+                cc_key = (
+                    idx.get('condicoescomerciais') or idx.get('condicoes_comerciais') or idx.get('condicoes comerciais')
+                    or idx.get('condicoescomercial') or idx.get('termoscomerciais') or idx.get('condicoesvenda')
+                )
+                if not cc_key:
+                    # heurística: procurar qualquer chave cujo normalizado contenha 'condic' e 'comerc'
+                    for nk, orig in idx.items():
+                        if 'condic' in nk and 'comerc' in nk:
+                            cc_key = orig
+                            break
+                cc = d.get(cc_key) if cc_key else None
+                if cc is not None:
+                    conds: Dict[str, str] = {}
+                    for k2, val in _as_list_of_pairs(cc):
+                        conds[k2] = val
+                    collected.append(conds)
+                else:
+                    # fallback: procurar alguma lista que pareça [{chave,valor},...]
+                    for _k2, v2 in d.items():
+                        if isinstance(v2, list):
+                            pairs = _as_list_of_pairs(v2)
+                            if pairs:
+                                conds: Dict[str, str] = {}
+                                for k2, val in pairs:
+                                    conds[k2] = val
+                                collected.append(conds)
+                                break
+            elif isinstance(v, list):
+                conds: Dict[str, str] = {}
+                for k2, val in _as_list_of_pairs(v):
+                    conds[k2] = val
+                collected.append(conds)
+        if collected:
+            return collected[:20]
+
+    # 1) { "propostas": { "proposta_1": {condicoes_comerciais: [...]}, ... } }
+    if 'propostas' in condicomer_padronizado and isinstance(condicomer_padronizado['propostas'], dict):
+        for _prop_key, prop_val in condicomer_padronizado['propostas'].items():
+            conds: Dict[str, str] = {}
+            if isinstance(prop_val, dict):
+                idx = _norm_key_name_map(prop_val)
+                cc_k = (
+                    idx.get('condicoescomerciais') or idx.get('condicoes_comerciais') or idx.get('condicoes comerciais')
+                    or idx.get('condicoescomercial') or idx.get('termoscomerciais') or idx.get('condicoesvenda')
+                )
+                if not cc_k:
+                    for nk, orig in idx.items():
+                        if 'condic' in nk and 'comerc' in nk:
+                            cc_k = orig
+                            break
+                cc = prop_val.get(cc_k) if cc_k else None
+                for k, v in _as_list_of_pairs(cc):
+                    conds[k] = v
+                if not conds:
+                    # fallback: procurar qualquer lista com pares chave/valor
+                    for _k2, v2 in prop_val.items():
+                        if isinstance(v2, list):
+                            pairs = _as_list_of_pairs(v2)
+                            if pairs:
+                                for k, v in pairs:
+                                    conds[k] = v
+                                break
+            result.append(conds)
+
+    # 3) { "condicoes_comerciais": [ {"chave":..., "proposta_1":..., ...}, ... ] }
+    elif 'condicoes_comerciais' in condicomer_padronizado and isinstance(condicomer_padronizado['condicoes_comerciais'], list):
+        items = condicomer_padronizado['condicoes_comerciais']
+        max_idx = 0
+        for it in items:
+            if isinstance(it, dict):
+                for k in it.keys():
+                    if isinstance(k, str) and k.startswith('proposta_'):
+                        try:
+                            i = int(k.split('_', 1)[1])
+                            if i > max_idx:
+                                max_idx = i
+                        except Exception:
+                            pass
+        result = [dict() for _ in range(max_idx)]
+        for it in items:
+            if not isinstance(it, dict):
+                continue
+            key = it.get('chave')
+            if not isinstance(key, str):
+                continue
+            for i in range(1, max_idx + 1):
+                val = it.get(f'proposta_{i}')
+                if i - 1 < len(result):
+                    result[i - 1][key] = 'null' if val in (None, 'null', '') else str(val)
+
+    # 2) { "condicoes_comerciais": { "proposta_1": {...}, ... } }
+    elif 'condicoes_comerciais' in condicomer_padronizado and isinstance(condicomer_padronizado['condicoes_comerciais'], dict):
+        for _prop_key, cc in condicomer_padronizado['condicoes_comerciais'].items():
+            conds: Dict[str, str] = {}
+            for k, v in _as_list_of_pairs(cc):
+                conds[k] = v
+            result.append(conds)
+
+    # 2.b/3.b) variantes camelCase/norm (condicoesComerciais)
+    else:
+        idx_top = _norm_key_name_map(condicomer_padronizado)
+        alt_key = idx_top.get('condicoescomerciais')
+        if alt_key:
+            alt_val = condicomer_padronizado.get(alt_key)
+            if isinstance(alt_val, dict):
+                for _prop_key, cc in alt_val.items():
+                    conds: Dict[str, str] = {}
+                    for k, v in _as_list_of_pairs(cc):
+                        conds[k] = v
+                    result.append(conds)
+            elif isinstance(alt_val, list):
+                items = alt_val
+                max_idx = 0
+                for it in items:
+                    if isinstance(it, dict):
+                        for k in it.keys():
+                            if isinstance(k, str) and k.startswith('proposta_'):
+                                try:
+                                    i = int(k.split('_', 1)[1])
+                                    if i > max_idx:
+                                        max_idx = i
+                                except Exception:
+                                    pass
+                result = [dict() for _ in range(max_idx)]
+                for it in items:
+                    if not isinstance(it, dict):
+                        continue
+                    key = it.get('chave')
+                    if not isinstance(key, str):
+                        continue
+                    for i in range(1, max_idx + 1):
+                        val = it.get(f'proposta_{i}')
+                        if i - 1 < len(result):
+                            result[i - 1][key] = 'null' if val in (None, 'null', '') else str(val)
+
+    return result[:20]
+
+
+def generate_condicomer_report(condicomer_padronizado: Any, filename: str = 'relatorio_condicomer.csv') -> str:
+    """Gera o CSV de condições comerciais no layout solicitado.
+
+    Colunas (18):
+    1: Item, 2: vazia, 3: Condições comerciais, 4-5 vazias,
+    6: valor prop1, 7-8 vazias, 9: valor prop2, 10-11 vazias,
+    12: valor prop3, 13-14 vazias, 15: valor prop4, 16-17 vazias, 18: valor prop5.
+    """
+    proposals = _extract_proposals(condicomer_padronizado)
+    try:
+        print(f"[DEBUG condicomer] propostas extraídas: {len(proposals)}")
+    except Exception:
+        pass
+
+    all_keys = set()
+    for p in proposals:
+        all_keys.update(p.keys())
+    sorted_keys = sorted(all_keys, key=lambda s: s.lower())
+    try:
+        preview = list(sorted_keys)[:10]
+        print(f"[DEBUG condicomer] chaves detectadas: {len(sorted_keys)} | preview: {preview}")
+        if len(sorted_keys) == 0:
+            dbg_path = 'relatorio_condicomer_debug.json'
+            with open(dbg_path, 'w', encoding='utf-8') as f:
+                json.dump(condicomer_padronizado, f, ensure_ascii=False, indent=2)
+            print(f"[DEBUG condicomer] Nenhuma chave encontrada. Payload salvo em {dbg_path}")
+    except Exception:
+        pass
+
+    with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        # Cabeçalho com coluna B vazia e C "Condições comerciais"
+        header = ['Item', '', 'Condições comerciais'] + [''] * (2 + 3 * len(proposals))
+        writer.writerow(header)
+
+        for key in sorted_keys:
+            kfmt = _cap_first_only(key)
+            row = ['']
+            row.append('')
+            row.append(kfmt)
+            row.extend(['', ''])
+            for i in range(len(proposals)):
+                val = ''
+                if i < len(proposals):
+                    val = _cap_first_only(proposals[i].get(key))
+                row.append(val)
+                row.extend(['', ''])
+            expected_cols = 5 + 3 * len(proposals)
+            if len(row) < expected_cols:
+                row.extend([''] * (expected_cols - len(row)))
+            writer.writerow(row)
+
+    return filename
+

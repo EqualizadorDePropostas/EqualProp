@@ -24,12 +24,12 @@ def upload_pdfs_to_gemini(pdf_files):
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-def process_proposal_with_retry(model, pdc_descriptions, proposal_file, prompt, gen_config):
+def process_proposal_with_retry(model, rfp_json, proposal_file, prompt, gen_config):
     """Processa proposta com retry"""
     try:
-        pdc_descriptions_str = json.dumps(pdc_descriptions)
+        rfp_json_str = json.dumps(rfp_json)
         response = model.generate_content(
-            contents=[pdc_descriptions_str, proposal_file, prompt],
+            contents=[rfp_json_str, proposal_file, prompt],
             generation_config=gen_config,
             request_options={"timeout": 180}
         )
@@ -39,7 +39,7 @@ def process_proposal_with_retry(model, pdc_descriptions, proposal_file, prompt, 
         raise
 
 
-def process_all_proposals(model, pdc_descriptions, proposal_files, proposal_paths, prompt, gen_config):
+def process_all_proposals(model, rfp_json, proposal_files, proposal_paths, prompt, gen_config):
     """Processa todas as propostas"""
     results = {}
     for proposal_file, proposal_path in zip(proposal_files, proposal_paths):
@@ -48,7 +48,7 @@ def process_all_proposals(model, pdc_descriptions, proposal_files, proposal_path
         print(f"\n[INFO] Processando: {os.path.basename(proposal_path)}")
         try:
             start_time = time.time()
-            response = process_proposal_with_retry(model, pdc_descriptions, proposal_file, prompt, gen_config)
+            response = process_proposal_with_retry(model, rfp_json, proposal_file, prompt, gen_config)
             results[proposal_path] = response.text
             print(f"[OK] Concluído em {time.time() - start_time:.2f}s")
         except Exception as e:

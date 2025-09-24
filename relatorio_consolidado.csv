@@ -1,45 +1,47 @@
-********** TABELA 1: FORNECEDORES **********,,,,,,,,
-Proposta,Empresa,Representante,Telefone,Email,,,,
 
-Proposta 1,Engemix,Florenca valeriano borges,(11) 95083-0679,florenca.borges@vcimentos.com,,,,
-Proposta 2,Intercement,Vanderlei rodrigues,+55 11 99284-0369,vanderleir@intercement.com,,,,
+Obra,,Obras Civis
+Solicitante,,Miriam Ferreira J Dos Santos
+Data da requisição,,2024-12-17
+Data de necessidade,,2025-01-05
+Comprador,,null
 
+,,,,,Fornecedor 1,,,Fornecedor 2,,,Fornecedor 3,,,Fornecedor 4,,,Envoltório dos mínimos,,,Fornecedor vencedor
+Empresa,,,,,Bimpavi Indústria E Comércio De Artefatos De Cimento Ltda,,,Cimentpav Pisos Intertravados De Concreto Ltda,,,Braston Paulinia Ltda.,,,Guianova Comércio De Prémoldados Ltda,,
+CNPJ,,,,,47.980.156/0001-40,,,13.232.778/0001-78,,,18.726.044/0001-69,,,22.657.588/0001-93,,
+Tel,,,,,(11) 4827-0290,,,(15) 32741-765,,,(19) 3289-5427,,,(11) 4075-3244,,
+Cel,,,,,null,,,(15) 99855-0111,,,(19)99943-1505,,,null,,
+email,,,,,null,,,planejamento@cimentpav.com.br,,,rodrigo@braston.com.br,,,null,,
+Contato,,,,,Erika,,,Julio Natan Alves,,,7- Rodrigo,,,Marcelo Parisi,,
 
+Item,ASTREIN,Descrição,qtd,und,R$ unit,R$ total,Semelhança,R$ unit,R$ total,Semelhança,R$ unit,R$ total,Semelhança,R$ unit,R$ total,Semelhança,R$ unit,R$ total,,R$ unit,R$ total
+,,guia concreto-ruas/avenidas; tipo concreto: pre-moldado; modelo: reta; padrao: prefeitura sao paulo; altura: 20 cm; largura maior: 8 cm; comprimento: 40 cm,1521.93,MT,null,excel formula 1,null,27.81,excel formula 1,88%,null,excel formula 1,null,18.0,excel formula 1,50%,excel formula 3,excel formula 1,,,
+,,"guia concreto-ruas/avenidas; tipo concreto: armado; modelo: rebaixada; padrao: prefeitura sao paulo; altura: 30 cm; largura maior: 40 cm; comprimento: 60 cm; caracteristicas adicionais: cor cinza claro munsell n 6,5",50,MT,null,excel formula 1,null,null,excel formula 1,22%,null,excel formula 1,null,null,excel formula 1,33%,excel formula 3,excel formula 1,,,
+,,guia concreto-ruas/avenidas; tipo concreto: pre-moldado; modelo: reta; padrao: prefeitura sao paulo; altura: 30 cm; largura maior: 15 cm; comprimento: 100 cm,1433,MT,49.0,excel formula 1,88%,51.59,excel formula 1,75%,null,excel formula 1,null,40.0,excel formula 1,100%,excel formula 3,excel formula 1,,,
+,,Total,,,,excel formula 2,,,excel formula 2,,,excel formula 2,,,excel formula 2,,,excel formula 2,,,
 
+Item,,Condições comerciais,,,,,,,,
+,,Condições de pagamento,,,"Carteira a vista, cartao de credito ou faturado",,,Para 28 dias,,
+,,Frete,,,"Valores de frete para viagens completas, com descarga por conta do transportador. o frete será faturado diretamente do transportador, com emissão de nota de conhecimento de transporte. deverá ser preparado, com antecedência, local para descarga do material na obra, que permita acesso de caminhão trucado. a descarga será feita ao lado do caminhão e o recolhimento do material até áreas onde o caminhão não tenha acesso é de responsabilidade do cliente.",,,"Frete a pagar após entrega: entrega durante a noite (após as 21h): r$ 50.663,00",,
+,,Garantia,,,null,,,A garantia legal do material é de 90 (noventa) dias da data da entrega do produto.,,
+,,Impostos,,,Inclusos nos preços. quando o material for entregue fora do estado de são paulo a diferença dda aliquota de icms ficará por conta do cliente.,,,null,,
+,,Política de cobrança de pallets,,,"Caso o pallet fique retido na obra, haverá cobrança imediata no valor de r$ 55,00 por pallet. para vendas com retira, o valor será de r$ 55,00, com pagamento no momento da retirada.",,,null,,
+,,Prazo de entrega,,,15 dias úteis,,,25 dias úteis,,
+,,Reajuste,,,Conforme variação do preço do cimento e agregados,,,null,,
+,,Validade da proposta,,,1 dias,,,"10 dias corridos, a partir de sua emissão",,
 
-﻿********** TABELA 2: VALORES GLOBAIS **********,,,,
-Produtos,Descrição,Quantidade demandada,Engemix,Intercement
-PDC1,"codigo: PDC1 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP III', 'unidade': None}, 'FCK': {'valor': 10, 'unidade': 'MPa'}, 'slump': {'valor': '10 +/- 2', 'unidade': 'cm'}, 'A/C': {'valor': 0.5, 'unidade': None}} | quantidade_demandada: {'valor': 3631.14, 'unidade': 'm3'}",3631.14,1579545.90,1612527.10
-PDC2,"codigo: PDC2 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP III', 'unidade': None}, 'FCK': {'valor': 25, 'unidade': 'MPa'}, 'slump': {'valor': '10 +/- 2', 'unidade': 'cm'}, 'A/C': {'valor': 0.5, 'unidade': None}} | quantidade_demandada: {'valor': 676.88, 'unidade': 'm3'}",676.88,null,326291.68
-PDC3,"codigo: PDC3 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP III', 'unidade': None}, 'FCK': {'valor': 35, 'unidade': 'MPa'}, 'slump': {'valor': '22 +/- 3', 'unidade': 'cm'}, 'A/C': {'valor': 0.5, 'unidade': None}} | quantidade_demandada: {'valor': 2759.75, 'unidade': 'm3'}",2759.75,2099157.28,1516042.91
-PDC4,"codigo: PDC4 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP III 40 RS', 'unidade': None}, 'FCK': {'valor': 45, 'unidade': 'MPa'}, 'slump': {'valor': '18 +/- 3', 'unidade': 'cm'}, 'A/C': {'valor': 0.45, 'unidade': None}} | quantidade_demandada: {'valor': 4009, 'unidade': 'm3'}",4009.00,10242456.00,null
-PDC5,"codigo: PDC5 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP III 40 RS', 'unidade': None}, 'FCK': {'valor': 45, 'unidade': 'MPa'}, 'slump': {'valor': '22 +/- 3', 'unidade': 'cm'}, 'A/C': {'valor': 0.45, 'unidade': None}} | quantidade_demandada: {'valor': 634.72, 'unidade': 'm3'}",634.72,10474428.00,null
-PDC6,"codigo: PDC6 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP V ARI RS', 'unidade': None}, 'FCK': {'valor': 45, 'unidade': 'MPa'}, 'slump': {'valor': '22 +/- 3', 'unidade': 'cm'}, 'A/C': {'valor': 0.45, 'unidade': None}} | quantidade_demandada: {'valor': 5650, 'unidade': 'm3'}",5650.00,1867115.52,null
-Total por fornecedor,,,26262702.70,3454861.69
-
-
-
-
-********** TABELA 3: PRODUTOS **********,,,,,,,,,
+*******IGNORE ESTA PARTE DO RELATORIO (ela será eventualmente consultada pelos desenvolvedores deste aplicativo para esclarecer duvidas sobre o comportamento da IA) ,,,,,,,,,
 Cod Produto,Fornecedor,Preço_unitario,Quantidade,Semelhança,Descrição,Num_ordem,Reasoning,,
 
-PDC1,RFP,,3631.14,,"codigo: PDC1 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP III', 'unidade': None}, 'FCK': {'valor': 10, 'unidade': 'MPa'}, 'slump': {'valor': '10 +/- 2', 'unidade': 'cm'}, 'A/C': {'valor': 0.5, 'unidade': None}} | quantidade_demandada: {'valor': 3631.14, 'unidade': 'm3'}",,,,
-PDC1,Engemix,435.0,3631.14,60%,DDLQXXC - ESP C10 B1 SL10±2.,1,"Correspondência em 3 de 5 especificações: FCK (10 MPa), slump (10±2 cm) e quantidade (diferença < 3%). Divergência: tipo de cimento e A/C não especificados no POP.",,
-PDC1,Intercement,444.1,3631.0,80%,"Concreto fck 10,0 MPa, Brita 1, Slump 100+-20 mm, Relação a/c 0,50",1,Match found based on Volume (3631.14 m³ demanded vs 3631 m³ offered) and FCK (10 MPa). Slump and A/C ratio also match the demand. Cement type is not specified in the offer.,,
+PDC1,RFP,,1521.93,,Descrição: GUIA CONCRETO-RUAS/AVENIDAS | TIPO CONCRETO: PRE-MOLDADO | MODELO: RETA | PADRAO: PREFEITURA SAO PAULO | ALTURA: 20 CM | LARGURA MAIOR: 8 CM | COMPRIMENTO: 40 CM,,,,
+PDC1,Cimentpav pisos intertravados de concreto ltda,27.81,1522.0,88%,MINI GUIA DE CONCRETO P/ INTERTRAVADO 40X20X07CM,2,"A associação foi feita com base na alta semelhança (88%) entre as especificações. O produto demandado (PDC1) e o ofertado (POP Ref 28) coincidem em tipo (pré-moldado), modelo (reta), dimensões (Altura 20cm, Largura ~8cm, Comprimento ~40cm) e quantidade (~1522).",,
+PDC1,Guianova comércio de prémoldados ltda,18.0,3894.0,50%,"Fornecimento de mini-guias de concreto, em concreto vibro-prensado mpa-28, em acabamento semi-rústico, nas dimensões de 0,39m comprimento; 0,19m altura; 0,09m largura, peso estimado em 15kg/peça (1.521m.l.)",2,"A associação foi feita com base na semelhança de 50%. As especificações 'Descrição', 'Tipo Concreto', 'Comprimento' (39cm vs 40cm, diferença de 2.5%) e 'Quantidade' (1521m vs 1521.93m, diferença de 0.12%) são compatíveis. As demais especificações como Altura (19cm vs 20cm) e Largura (9cm vs 8cm) não são compatíveis pois a diferença é superior a 3%.",,
 
-PDC2,RFP,,676.88,,"codigo: PDC2 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP III', 'unidade': None}, 'FCK': {'valor': 25, 'unidade': 'MPa'}, 'slump': {'valor': '10 +/- 2', 'unidade': 'cm'}, 'A/C': {'valor': 0.5, 'unidade': None}} | quantidade_demandada: {'valor': 676.88, 'unidade': 'm3'}",,,,
-PDC2,Intercement,482.68,676.0,60%,"Concreto fck 25,0 MPa, Brita 1, Slump 200+-30 mm, Relação a/c 0,50",5,Match found based on Volume (676.88 m³ demanded vs 676 m³ offered) and FCK (25 MPa). The A/C ratio also matches. The offered slump (200+/-30 mm) differs significantly from the demanded slump (100+/-20 mm).,,
+PDC2,RFP,,50.00,,"Descrição: GUIA CONCRETO-RUAS/AVENIDAS | TIPO CONCRETO: ARMADO | MODELO: REBAIXADA | PADRAO: PREFEITURA SAO PAULO | ALTURA: 30 CM | LARGURA MAIOR: 40 CM | COMPRIMENTO: 60 CM | CARACTERISTICAS ADICIONAIS: COR CINZA CLARO MUNSELL N 6,5",,,,
+PDC2,Cimentpav pisos intertravados de concreto ltda,null,null,22%,null,null,Não foi encontrado produto ofertado com semelhança superior a 39%. O produto demandado (PDC2) possui especificações críticas como tipo 'ARMADO' e modelo 'REBAIXADA' que não correspondem a nenhum dos produtos na proposta.,,
+PDC2,Guianova comércio de prémoldados ltda,null,null,33%,null,null,"Nenhum produto oferecido atingiu a semelhança mínima de 39%. O produto mais próximo (POP 01) teve semelhança de 33%, com divergências significativas em 'Tipo Concreto' (Armado vs Pré-moldado), 'Largura' (40cm vs 15cm), 'Comprimento' (60cm vs 100cm) e 'Quantidade' (50m vs 1433m).",,
 
-PDC3,RFP,,2759.75,,"codigo: PDC3 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP III', 'unidade': None}, 'FCK': {'valor': 35, 'unidade': 'MPa'}, 'slump': {'valor': '22 +/- 3', 'unidade': 'cm'}, 'A/C': {'valor': 0.5, 'unidade': None}} | quantidade_demandada: {'valor': 2759.75, 'unidade': 'm3'}",,,,
-PDC3,Engemix,578.0,3631.76,80%,"AQCECVF - ESP A/C 0,5 C35 B0 SL22±3 CAIII",2,"Correspondência em 4 de 5 especificações: tipo cimento (CP III), FCK (35 MPa), slump (22±3 cm) e A/C (0.5). Divergência: quantidade (diferença > 3%).",,
-PDC3,Intercement,549.49,2759.0,60%,"Concreto fck 35,0 MPa, Brita 1, Slump 200+-30 mm, Relação a/c 0,50",2,Match found based on Volume (2759.75 m³ demanded vs 2759 m³ offered) and FCK (35 MPa). The A/C ratio also matches. The offered slump (200+/-30 mm) differs from the demanded slump (220+/-30 mm).,,
-
-PDC4,RFP,,4009.00,,"codigo: PDC4 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP III 40 RS', 'unidade': None}, 'FCK': {'valor': 45, 'unidade': 'MPa'}, 'slump': {'valor': '18 +/- 3', 'unidade': 'cm'}, 'A/C': {'valor': 0.45, 'unidade': None}} | quantidade_demandada: {'valor': 4009, 'unidade': 'm3'}",,,,
-PDC4,Engemix,574.0,17844.0,40%,"YJADJLU - ESP A/C 0,45 C40 B01 SL12±2 CAIV CPIII",3,"Correspondência em 2 de 5 especificações: A/C (0.45) e tipo de cimento base (CP III). Divergência: FCK (40 vs 45 MPa), slump (12±2 vs 18±3 cm) e quantidade.",,
-
-PDC5,RFP,,634.72,,"codigo: PDC5 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP III 40 RS', 'unidade': None}, 'FCK': {'valor': 45, 'unidade': 'MPa'}, 'slump': {'valor': '22 +/- 3', 'unidade': 'cm'}, 'A/C': {'valor': 0.45, 'unidade': None}} | quantidade_demandada: {'valor': 634.72, 'unidade': 'm3'}",,,,
-PDC5,Engemix,587.0,17844.0,60%,"VWFKRJX - ESP A/C 0,45 C40 B01 SL22±3 CAIV CPIII",4,"Correspondência em 3 de 5 especificações: slump (22±3 cm), A/C (0.45) e tipo de cimento base (CP III). Divergência: FCK (40 vs 45 MPa) e quantidade.",,
-
-PDC6,RFP,,5650.00,,"codigo: PDC6 | especificacoes_tecnicas: {'tipo cimento': {'valor': 'CP V ARI RS', 'unidade': None}, 'FCK': {'valor': 45, 'unidade': 'MPa'}, 'slump': {'valor': '22 +/- 3', 'unidade': 'cm'}, 'A/C': {'valor': 0.45, 'unidade': None}} | quantidade_demandada: {'valor': 5650, 'unidade': 'm3'}",,,,
-PDC6,Engemix,576.0,3241.52,60%,"TQDPGUJ - ESP A/C 0,45 C45 B01 SL22±3",5,"Correspondência em 3 de 5 especificações: FCK (45 MPa), slump (22±3 cm) e A/C (0.45). Divergência: tipo de cimento (não especificado no POP vs CP V ARI RS) e quantidade.",,
+PDC3,RFP,,1433.00,,Descrição: GUIA CONCRETO-RUAS/AVENIDAS | TIPO CONCRETO: PRE-MOLDADO | MODELO: RETA | PADRAO: PREFEITURA SAO PAULO | ALTURA: 30 CM | LARGURA MAIOR: 15 CM | COMPRIMENTO: 100 CM,,,,
+PDC3,Bimpavi indústria e comércio de artefatos de cimento ltda,49.0,1433.0,88%,Guia de concreto reta padrão PMSP 100x30x15cm - AF,3,"A descrição do produto ('Guia de concreto reta padrão PMSP 100x30x15cm') e a quantidade (1433) são compatíveis com as especificações do PDC3. As dimensões (100x30x15 cm), modelo (reta), padrão (PMSP) e quantidade (1433) correspondem diretamente ao solicitado. A semelhança é calculada como 7 de 8 especificações correspondentes (7/8 = 87.5%).",,
+PDC3,Cimentpav pisos intertravados de concreto ltda,51.59,1433.0,75%,GUIA PADRÃO 30X15X13X50,1,"A associação foi feita com base na alta semelhança (75%). O produto demandado (PDC3) e o ofertado (POP Ref 26) coincidem em tipo (pré-moldado), modelo (reta), dimensões (Altura 30cm, Largura 15cm) e na quantidade exata (1433).",,
+PDC3,Guianova comércio de prémoldados ltda,40.0,1433.0,100%,"Fornecimento de Guias de concreto padrão PMSP tipo 100, em concreto vibro prensado de 30mpa, em acabamento semi-rústico, nas dimensões de: 1,00m comprimento; 0,30m altura; 0,15m largura base; 0,12m largura topo; peso estimado em 10095 kg./m.l.",1,"A associação foi feita com base na semelhança de 100%. Todas as especificações técnicas do produto demandado, incluindo Descrição, Tipo Concreto, Padrão, Altura (30cm), Largura (15cm), Comprimento (100cm) e Quantidade (1433m), são idênticas às do produto oferecido.",,
 

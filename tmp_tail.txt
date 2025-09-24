@@ -1,0 +1,250 @@
+            acc.extend(part)
+            return acc
+    except:
+        pass
+    return part  # fallback simples
+
+
+# =========================
+# --------- MAIN ----------
+# =========================
+def main(model, gen_config):
+    st.set_page_config(page_title="Equalizador de Propostas", page_icon="??", layout="wide")
+    _ensure_state()
+    _header()
+
+    # ---------- TELA 1 (IDLE) ----------
+    if st.session_state["stage"] == "idle":
+        _uploader_line("Requisi��o RFP/RFQ (um arquivo PDF)", key="rfp_upl", multiple=False)
+        _uploader_line("Propostas comerciais (v�rios arquivos PDF)", key="prop_upl", multiple=True)
+
+        rfp = st.session_state.get("rfp_upl")
+        props = st.session_state.get("prop_upl", [])
+        if rfp and props:
+            st.session_state["rfp_file"] = rfp
+            st.session_state["proposal_files"] = props
+            st.session_state["stage"] = "selected"
+            st.rerun()
+        return
+
+    # ---------- TELA 2 (SELECTED) ----------
+    if st.session_state["stage"] == "selected":
+        _selected_line("Requisi��o RFP/RFQ (um arquivo PDF)", _join_names(st.session_state["rfp_file"]), "clear_rfp")
+        _selected_line("Propostas comerciais (v�rios arquivos PDF)", _join_names(st.session_state["proposal_files"]), "clear_props")
+
+        c1, c2 = st.columns([0.18, 0.18])
+        with c1:
+            if st.button("Gerar relat�rio", key="btn_run", use_container_width=True):
+                st.session_state["stage"] = "running"
+                st.rerun()
+        with c2:
+            if _dangerize("Interromper", key="btn_abort_sel"):
+                _reset_all()
+        return
+
+    # ---------- TELA 3 (RUNNING) ----------
+    if st.session_state["stage"] == "running":
+        # Linhas com nomes (cinza)
+        _selected_line_muted("Requisi��o RFP/RFQ (um arquivo PDF)", _join_names(st.session_state["rfp_file"]))
+        _selected_line_muted("Propostas comerciais (v�rios arquivos PDF)", _join_names(st.session_state["proposal_files"]))
+
+        # Linha "Aguarde..." + Interromper
+        c1, c2 = st.columns([0.7, 0.3], vertical_alignment="center")
+        with c1:
+            st.markdown('<div class="spinner-wrap"><div class="spinner"></div><div class="body-18">Aguarde...</div></div>',
+                        unsafe_allow_html=True)
+        with c2:
+            if _dangerize("Interromper", key="btn_abort_run"):
+                _reset_all()
+
+        # Placeholders vis�veis (linha de status + barra azul)
+        status_ph = st.empty()      # linha da tarefa atual
+        bar_ph = st.empty()         # barra de progresso AZUL
+
+        # ========= PIPELINE =========
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # 1) Salvar arquivos
+                status_ph.markdown('<p class="body-18">Processando arquivos...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 5)
+
+                rfp = st.session_state["rfp_file"]
+                rfp_paths = []
+                safe_name = sanitize_filename(rfp.name)
+                rfp_path = os.path.join(temp_dir, safe_name)
+                with open(rfp_path, "wb") as f:
+                    f.write(rfp.getvalue())
+                rfp_paths.append(rfp_path)
+
+                proposal_paths = []
+                for p in st.session_state["proposal_files"]:
+                    safe = sanitize_filename(p.name)
+                    p_path = os.path.join(temp_dir, safe)
+                    with open(p_path, "wb") as f:
+                        f.write(p.getvalue())
+                    proposal_paths.append(p_path)
+
+                # 2) Converter p/ PDF
+                status_ph.markdown('<p class="body-18">Convertendo arquivos para PDF...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 15)
+                rfp_pdfs = process_files(rfp_paths, temp_dir)
+                proposal_pdfs = process_files(proposal_paths, temp_dir)
+                if not rfp_pdfs or not proposal_pdfs:
+                    status_ph.markdown('<p class="body-18">Erro: falha ao processar arquivos.</p>', unsafe_allow_html=True)
+                    _render_blue_progress(bar_ph, 0)
+                    return
+
+                # 3) Upload Gemini
+                status_ph.markdown('<p class="body-18">Subindo arquivos para a Gemini...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 35)
+                rfp_gemini_files = upload_pdfs_to_gemini(rfp_pdfs)
+                proposal_gemini_files = upload_pdfs_to_gemini(proposal_pdfs)
+                if not rfp_gemini_files or not proposal_gemini_files:
+                    status_ph.markdown('<p class="body-18">Erro: falha no upload para a Gemini.</p>', unsafe_allow_html=True)
+                    _render_blue_progress(bar_ph, 0)
+                    return
+
+                # # 4) Extrair PDCs
+                # status_ph.markdown('<p class="body-18">Extraindo PDCs do RFP...</p>', unsafe_allow_html=True)
+                # _render_blue_progress(bar_ph, 55)
+                # response = model.generate_content(
+                #     contents=[rfp_prompt, rfp_gemini_files[0]],
+                #     generation_config=gen_config
+                # )
+                # rfp_json = json.loads(response.text)
+
+                # 4) Extrair PDCs e Cabe�alho da RFP
+                status_ph.markdown('<p class="body-18">Extraindo PDCs e informa��es do RFP...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 55)
+
+                response = model.generate_content(
+                    contents=[rfp_prompt, rfp_gemini_files[0]],
+                    generation_config=gen_config
+                )
+
+                # Processa a resposta mantendo compatibilidade
+                rfp_json = json.loads(response.text)
+
+                # Extrai as informa��es separadamente
+                rfp_json = rfp_json["rfp_json"]  # Novo: informa��es do cabe�alho
+                rfp_json = rfp_json["produtos_demandados"]  # Mant�m compatibilidade: lista de PDCs
+
+                # 5) Processar propostas **uma por vez** mostrando o nome do PDF
+                n = len(proposal_pdfs)
+                aggregated_results = None
+                for i, (gfile, pdf_path) in enumerate(zip(proposal_gemini_files, proposal_pdfs), start=1):
+                    fname = os.path.basename(pdf_path)
+                    status_ph.markdown(
+                        f'<p class="body-18">Processando proposta: <span class="value">{fname}</span></p>',
+                        unsafe_allow_html=True
+                    )
+                    # Progresso dentro do intervalo 60?90
+                    pct = 60 + int(30 * (i-1) / max(n, 1))
+                    _render_blue_progress(bar_ph, pct)
+
+                    partial = process_all_proposals(
+                        model,
+                        rfp_json,
+                        [gfile],          # uma proposta por vez
+                        [pdf_path],
+                        extraction_prompt,
+                        gen_config
+                    )
+                    aggregated_results = _merge_results(aggregated_results, partial)
+
+                proposta_json = aggregated_results
+
+                # Partes por proposta (chave: nome do PDF)
+                proposta_json = {}
+                proposta_json = {}
+                proposta_json = {}
+                for _path, _text in proposta_json.items():
+                    if not _text:
+                        continue
+                    try:
+                        _nome = os.path.basename(_path)
+                        _dados = json.loads(_text).get("proposta", {})
+                        proposta_json[_nome] = _dados.get("header")
+                        proposta_json[_nome] = _dados.get("pops", [])
+                        proposta_json[_nome] = _dados.get("condicoes_comerciais", [])
+                    except Exception:
+                        pass
+
+                # 6) Padronizar condi��es comerciais
+                status_ph.markdown('<p class="body-18">Padronizando condi��es comerciais...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 55)
+
+                try:
+                    response = model.generate_content(
+                        contents=[padroniza_condicomer_prompt, proposta_json],
+                        generation_config=gen_config
+                    )
+                    
+                    # Verifica se a resposta foi bem-sucedida e tem conte�do
+                    if response and hasattr(response, 'text') and response.text:
+                        condicomer_padronizado = json.loads(response.text)
+                    else:
+                        raise ValueError("Resposta vazia ou inv�lida do modelo")
+                        
+                except json.JSONDecodeError as e:
+                    print(f"Erro ao decodificar JSON: {e}")
+                    print(f"Conte�do recebido: {response.text if response else 'Nenhuma resposta'}")
+                    condicomer_padronizado = {}  # Ou algum valor padr�o
+                except Exception as e:
+                    print(f"Erro inesperado: {e}")
+                    condicomer_padronizado = {}
+
+                # 7) Gerar relat�rio final (EXCEL apenas)
+                status_ph.markdown('<p class="body-18">Gerando relat�rio final (Excel)...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 92)
+                _ = generate_suppliers_report(proposta_json)
+                _ = generate_preco_report(rfp_json, proposta_json)
+                _ = generate_comparison_report(rfp_json, proposta_json)
+                _, relatorio_final_xlsx = consolidate_reports()
+
+                st.session_state["report_xlsx"] = relatorio_final_xlsx
+
+                status_ph.markdown('<p class="body-18">Conclu�do.</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 100)
+
+                st.session_state["stage"] = "done"
+                st.rerun()
+
+        except Exception as e:
+            status_ph.markdown(f'<p class="body-18">Erro: {e}</p>', unsafe_allow_html=True)
+            _render_blue_progress(bar_ph, 0)
+        return
+
+    # ---------- TELA 4 (DONE) ----------
+    if st.session_state["stage"] == "done":
+        _selected_line_muted("Requisi��o RFP/RFQ (um arquivo PDF)", _join_names(st.session_state["rfp_file"]))
+        _selected_line_muted("Propostas comerciais (v�rios arquivos PDF)", _join_names(st.session_state["proposal_files"]))
+
+        xlsx_path = st.session_state.get("report_xlsx")
+        if not xlsx_path or not os.path.exists(xlsx_path):
+            _reset_all()
+            return
+
+        c1, c2 = st.columns([0.22, 0.18])
+        with c1:
+            with open(xlsx_path, "rb") as f:
+                downloaded = st.download_button(
+                    "Baixar relat�rio",
+                    data=f.read(),
+                    file_name="relatorio_consolidado.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="btn_dl",
+                    use_container_width=True
+                )
+            st.markdown("""
+            <script>
+            const btns = window.parent.document.querySelectorAll('button');
+            btns.forEach(b=>{ if (b.innerText.trim().startsWith('Baixar relat�rio')) b.classList.add('btn-download'); });
+            </script>
+            """, unsafe_allow_html=True)
+            if downloaded:
+                _reset_all()
+        with c2:
+            if _dangerize("Interromper", key="btn_abort_done"):
+                _reset_all()
+        return
