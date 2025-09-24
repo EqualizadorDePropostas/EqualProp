@@ -1,4 +1,4 @@
-# equalprop/ui/app.py
+ï»¿# equalprop/ui/app.py
 
 import os
 import json
@@ -34,7 +34,7 @@ p.body-18 { font-size:18px !important; font-weight:400 !important; margin:0 0 12
 .row .value { font-size:18px; }
 .row .value.muted { color: var(--muted) !important; }
 
-/* Uploader: esconder dropzone e deixar só "Browse files" pequeno */
+/* Uploader: esconder dropzone e deixar sÃ³ "Browse files" pequeno */
 div[data-testid="stFileUploader"] section { padding:0 !important; }
 div[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"]{
   padding:0 !important; border:none !important; background:transparent !important; min-height:auto !important;
@@ -43,7 +43,7 @@ div[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] > div:f
 div[data-testid="stFileUploader"] small { display:none !important; }
 .stFileUploader label { font-size:18px !important; }
 
-/* Botões compactos */
+/* BotÃµes compactos */
 .stButton > button { padding:6px 14px !important; border-radius:6px !important; font-size:18px !important; }
 .btn-danger { border:1px solid var(--red) !important; }
 .btn-danger:before { content:"\\1F534  "; }  /* bolinha vermelha */
@@ -85,9 +85,9 @@ def _header():
     st.markdown('<h1 class="app-title">Equalizador de Propostas</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle-18b">Perla Cabral Ferreira</p>', unsafe_allow_html=True)
     st.markdown(
-#        '<p class="body-18">Clique nos botôes abaixo para subir a requisição de compra e as respectivas propostas '
-#        'comercias. O sistema vai usar IA para gerar um relatório comparativo dos fornecedores.</p>',
-         '<p class="body-18">Clique nos botões abaixo para subir a requisição de compra e as respectivas propostas comerciais.<br/>O sistema vai usar IA para gerar um relatório comparativo dos fornecedores.</p>',
+#        '<p class="body-18">Clique nos botÃ´es abaixo para subir a requisiÃ§Ã£o de compra e as respectivas propostas '
+#        'comercias. O sistema vai usar IA para gerar um relatÃ³rio comparativo dos fornecedores.</p>',
+         '<p class="body-18">Clique nos botÃµes abaixo para subir a requisiÃ§Ã£o de compra e as respectivas propostas comerciais.<br/>O sistema vai usar IA para gerar um relatÃ³rio comparativo dos fornecedores.</p>',
         unsafe_allow_html=True
     )
 
@@ -147,7 +147,7 @@ def _render_blue_progress(ph, pct: int):
     )
 
 def _merge_results(acc, part):
-    """Tenta mesclar resultados parciais em um único objeto."""
+    """Tenta mesclar resultados parciais em um Ãºnico objeto."""
     if acc is None:
         return part
     try:
@@ -172,7 +172,7 @@ def main(model, gen_config):
 
     # ---------- TELA 1 (IDLE) ----------
     if st.session_state["stage"] == "idle":
-        _uploader_line("Requisição de compra (um PDF)", key="rfp_upl", multiple=False)
+        _uploader_line("RequisiÃ§Ã£o de compra (um PDF)", key="rfp_upl", multiple=False)
         _uploader_line("Propostas comerciais (de um a vinte PDFs)", key="prop_upl", multiple=True)
 
         rfp = st.session_state.get("rfp_upl")
@@ -186,12 +186,12 @@ def main(model, gen_config):
 
     # ---------- TELA 2 (SELECTED) ----------
     if st.session_state["stage"] == "selected":
-        _selected_line("Requisição de compra (um PDF)", _join_names(st.session_state["rfp_file"]), "clear_rfp")
+        _selected_line("RequisiÃ§Ã£o de compra (um PDF)", _join_names(st.session_state["rfp_file"]), "clear_rfp")
         _selected_line("Propostas comerciais (de um a vinte PDFs)", _join_names(st.session_state["proposal_files"]), "clear_props")
 
         c1, c2 = st.columns([0.18, 0.18])
         with c1:
-            if st.button("Gerar relatório", key="btn_run", use_container_width=True):
+            if st.button("Gerar relatÃ³rio", key="btn_run", use_container_width=True):
                 st.session_state["stage"] = "running"
                 st.rerun()
         with c2:
@@ -202,7 +202,7 @@ def main(model, gen_config):
     # ---------- TELA 3 (RUNNING) ----------
     if st.session_state["stage"] == "running":
         # Linhas com nomes (cinza)
-        _selected_line_muted("Requisição de compra (um PDF)", _join_names(st.session_state["rfp_file"]))
+        _selected_line_muted("RequisiÃ§Ã£o de compra (um PDF)", _join_names(st.session_state["rfp_file"]))
         _selected_line_muted("Propostas comerciais (de um a vinte PDFs)", _join_names(st.session_state["proposal_files"]))
 
         # Linha "Aguarde..." + Interromper
@@ -214,7 +214,7 @@ def main(model, gen_config):
             if _dangerize("Interromper", key="btn_abort_run"):
                 _reset_all()
 
-        # Placeholders visíveis (linha de status + barra azul)
+        # Placeholders visÃ­veis (linha de status + barra azul)
         status_ph = st.empty()      # linha da tarefa atual
         bar_ph = st.empty()         # barra de progresso AZUL
 
@@ -261,8 +261,8 @@ def main(model, gen_config):
                     _render_blue_progress(bar_ph, 0)
                     return
 
-                # 4) Extrair PDCs e Cabeçalho da RFP
-                status_ph.markdown('<p class="body-18">Analisando a requisição de compra...</p>', unsafe_allow_html=True)
+                # 4) Extrair PDCs e CabeÃ§alho da RFP
+                status_ph.markdown('<p class="body-18">Analisando a requisiÃ§Ã£o de compra...</p>', unsafe_allow_html=True)
                 _render_blue_progress(bar_ph, 55)
 
                 response = model.generate_content(
@@ -273,9 +273,9 @@ def main(model, gen_config):
                 # Processa a resposta mantendo compatibilidade
                 rfp_json = json.loads(response.text)
 
-                # Extrai as informações separadamente
-                # rfp_json = rfp_json["rfp_json"]  # Novo: informações do cabeçalho
-                # rfp_json = rfp_json["produtos_demandados"]  # Mantém compatibilidade: lista de PDCs
+                # Extrai as informaÃ§Ãµes separadamente
+                # rfp_json = rfp_json["rfp_json"]  # Novo: informaÃ§Ãµes do cabeÃ§alho
+                # rfp_json = rfp_json["produtos_demandados"]  # MantÃ©m compatibilidade: lista de PDCs
 
                 # 5) Processar propostas **uma por vez** mostrando o nome do PDF
                 n = len(proposal_pdfs)
@@ -303,8 +303,8 @@ def main(model, gen_config):
                 proposta_json = aggregated_results
 
 
-                # 6) Padronizar condições comerciais
-                status_ph.markdown('<p class="body-18">Padronizando condições comerciais...</p>', unsafe_allow_html=True)
+                # 6) Padronizar condiÃ§Ãµes comerciais
+                status_ph.markdown('<p class="body-18">Padronizando condiÃ§Ãµes comerciais...</p>', unsafe_allow_html=True)
                 _render_blue_progress(bar_ph, 90)
 
                 condicomer_bruto = None
@@ -314,26 +314,26 @@ def main(model, gen_config):
                         generation_config=gen_config
                     )
                     condicomer_bruto = response.text if response and hasattr(response, "text") else None
-                    # Verifica se a resposta foi bem-sucedida e tem conteúdo
+                    # Verifica se a resposta foi bem-sucedida e tem conteÃºdo
                     if response and hasattr(response, 'text') and response.text:
                         condicomer_padronizado = json.loads(response.text)
                     else:
-                        raise ValueError("Resposta vazia ou inválida do modelo")
+                        raise ValueError("Resposta vazia ou invÃ¡lida do modelo")
                         
                 except json.JSONDecodeError as e:
                     print(f"Erro ao decodificar JSON: {e}")
-                    print(f"Conteúdo recebido: {response.text if response else 'Nenhuma resposta'}")
-                    condicomer_padronizado = {}  # Ou algum valor padrão
+                    print(f"ConteÃºdo recebido: {response.text if response else 'Nenhuma resposta'}")
+                    condicomer_padronizado = {}  # Ou algum valor padrÃ£o
                 except Exception as e:
                     print(f"Erro inesperado: {e}")
                     condicomer_padronizado = {}
 
-                # (fallback removido por solicitação)
+                # (fallback removido por solicitaÃ§Ã£o)
 
-                # 7) Gerar relatório final (EXCEL apenas)
-                status_ph.markdown('<p class="body-18">Gerando relatório final (Excel)...</p>', unsafe_allow_html=True)
+                # 7) Gerar relatÃ³rio final (EXCEL apenas)
+                status_ph.markdown('<p class="body-18">Gerando relatÃ³rio final (Excel)...</p>', unsafe_allow_html=True)
                 _render_blue_progress(bar_ph, 92)
-                # Proteger o diretório de trabalho do Streamlit contra mudanças internas
+                # Proteger o diretÃ³rio de trabalho do Streamlit contra mudanÃ§as internas
                 cwd_before = os.getcwd()
                 try:
                     _, relatorio_final_xlsx = consolidate_reports(rfp_json, proposta_json, condicomer_padronizado)
@@ -345,7 +345,7 @@ def main(model, gen_config):
 
                 st.session_state["report_xlsx"] = relatorio_final_xlsx
 
-                status_ph.markdown('<p class="body-18">Concluído.</p>', unsafe_allow_html=True)
+                status_ph.markdown('<p class="body-18">ConcluÃ­do.</p>', unsafe_allow_html=True)
                 _render_blue_progress(bar_ph, 100)
 
                 st.session_state["stage"] = "done"
@@ -358,7 +358,7 @@ def main(model, gen_config):
 
     # ---------- TELA 4 (DONE) ----------
     if st.session_state["stage"] == "done":
-        _selected_line_muted("Requisição de compra (um PDF)", _join_names(st.session_state["rfp_file"]))
+        _selected_line_muted("RequisiÃ§Ã£o de compra (um PDF)", _join_names(st.session_state["rfp_file"]))
         _selected_line_muted("Propostas comerciais (de um a vinte PDFs)", _join_names(st.session_state["proposal_files"]))
 
         xlsx_path = st.session_state.get("report_xlsx")
@@ -370,7 +370,7 @@ def main(model, gen_config):
         with c1:
             with open(xlsx_path, "rb") as f:
                 downloaded = st.download_button(
-                    "Baixar relatório",
+                    "Baixar relatÃ³rio",
                     data=f.read(),
                     file_name="relatorio_consolidado.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -380,7 +380,7 @@ def main(model, gen_config):
             st.markdown("""
             <script>
             const btns = window.parent.document.querySelectorAll('button');
-            btns.forEach(b=>{ if (b.innerText.trim().startsWith('Baixar relatório')) b.classList.add('btn-download'); });
+            btns.forEach(b=>{ if (b.innerText.trim().startsWith('Baixar relatÃ³rio')) b.classList.add('btn-download'); });
             </script>
             """, unsafe_allow_html=True)
             if downloaded:
@@ -389,4 +389,5 @@ def main(model, gen_config):
             if _dangerize("Interromper", key="btn_abort_done"):
                 _reset_all()
         return
+
 
