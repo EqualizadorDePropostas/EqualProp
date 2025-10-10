@@ -1,0 +1,106 @@
+import os
+import re
+import time
+import warnings
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup
+from io import StringIO
+
+# Suprime aviso futuro do pandas ao passar HTML literal para read_html
+warnings.filterwarnings(
+    "ignore",
+    category=FutureWarning,
+    message="Passing literal html to 'read_html' is deprecated",
+)
+
+PORTAL_BASE = "https://portaldatransparencia.gov.br/pessoa-juridica/{}"
+UA = "Mozilla/5.0"
+
+def fetch_quadro_societario_html(cnpj: str) -> str:
+    url = PORTAL_BASE.format(cnpj)
+    resp = requests.get(url, headers={"User-Agent": UA}, timeout=60)
+    resp.raise_for_status()
+    return resp.text
+
+def parse_quadro_societario(html: str):
+    """
+    Procura a tabela com cabeçalho 'QUADRO SOCIETÁRIO' e retorna lista de dicts:
+    [{'socio': ..., 'qualificacao': ...}, ...]
+    """
+    soup = BeautifulSoup(html, "html.parser")
+
+    # 1) Achar o título/ancora do bloco
+    heading = None
+    for tag in soup.find_all(["h2", "h3", "h4", "span", "div"]):
+        txt = (tag.get_text(strip=True) or "").upper()
+        if "QUADRO SOCIETÁRIO" in txt or "QUADRO SOCIETARIO" in txt:
+            heading = tag
+            break
+
+    # 2) Encontrar a tabela subsequente (fallback: pegar a maior tabela da página)
+    table = None
+    if heading:
+        # procura a primeira <table> após o heading
+        nxt = heading
+        for _ in range(50):
+            nxt = nxt.find_next()
+            if not nxt: break
+            if nxt.name == "table":
+                table = nxt
+                break
+
+    if table is None:
+        # fallback: pega a maior tabela da página
+        tables = pd.read_html(html)  # pode levantar ValueError se não houver tabelas
+        if not tables:
+            return []
+        df = max(tables, key=lambda t: t.shape[0])
+    else:
+        df = pd.read_html(StringIO(str(table)), flavor="lxml")[0]
+
+    # Normaliza colunas esperadas
+    cols = [c.strip().lower() for c in df.columns]
+    # tenta mapear nomes de colunas
+    try:
+        socio_col = next(c for c in df.columns if re.search(r"s[óo]cio", c, re.I))
+    except StopIteration:
+        socio_col = df.columns[0]
+    try:
+        qual_col = next(c for c in df.columns if re.search(r"qualifica", c, re.I))
+    except StopIteration:
+        qual_col = df.columns[-1]
+
+    # limpa linhas vazias/rodapés
+    df = df[[socio_col, qual_col]].copy()
+    df.columns = ["socio", "qualificacao"]
+    df = df[df["socio"].astype(str).str.strip().ne("")]
+
+    # remove possíveis cabeçalhos repetidos na primeira linha
+    df = df[df["socio"].str.lower() != "sócio"]
+    return df.to_dict(orient="records")
+
+def get_quadro_societario_for_cnpjs(cnpjs):
+    resultados = []
+    for cnpj in cnpjs:
+        try:
+            html = fetch_quadro_societario_html(cnpj)
+            socios = parse_quadro_societario(html)
+            for s in socios:
+                s["cnpj"] = cnpj
+            resultados.extend(socios)
+            time.sleep(0.5)  # educação c/ servidor
+        except Exception as e:
+            resultados.append({"cnpj": cnpj, "socio": None, "qualificacao": None, "erro": str(e)})
+    return resultados
+
+if __name__ == "__main__":
+    cnpjs = [
+        "64919541000109",  # exemplo do seu print
+        # adicione outros CNPJs aqui
+    ]
+    data = get_quadro_societario_for_cnpjs(cnpjs)
+    df = pd.DataFrame(data, columns=["cnpj", "socio", "qualificacao", "erro"])
+    df.to_csv("quadro_societario.csv", index=False, encoding="utf-8")
+    print(df)
+

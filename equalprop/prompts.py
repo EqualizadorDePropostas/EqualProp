@@ -133,18 +133,35 @@ Forneça a resposta exatamente no formato json abaixo:
 {
   "proposta": {
     "header": {
-      "empresa": {"type": "str", "description": "Nome da empresa fornecedora"},
-      "cnpj": {"type": "str", "description": CNPJ da empresa fornecedora"},
-      "representante": {"type": "str", "description": "Nome do representante da empresa fornecedora"},
-      "tel": {"type": "str", "description": "telefone da empresa fornecedora"},
-      "cel": {"type": "str", "description": "telefone do representante da empresa fornecedora"},
-      "email": {"type": "str", "description": "email do representante da empresa fornecedora"}
+      "type": "object",
+      "description": "Mostra informacoes sobre a empresa fornecedora
+      A empresa fornecedora é quem fez a proposta e a enviou para seu cliente (que é a empresa compradora)
+      Na proposta tambem constam dados da empresa compradora. Nao queremos capturar dados da empresa compradora. 
+      Atenção para nao cometer o erro de preencher dados da empresa fornecedora com dados da empresa compradora. 
+      Os dados a seguir são da empresa compradora e portanto não se referem à empresa fornecedora : email @grupoagis.com.br e cnpj 52067115000105",
+      "properties": {
+        "empresa": {"type": "str", "description": "Nome da empresa fornecedora"},
+        "cnpj": {"type": "str", "description": "CNPJ da empresa fornecedora"},
+        "representante": {"type": "str", "description": "Nome do representante da empresa fornecedora"},
+        "tel": {"type": "str", "description": "Telefone da empresa fornecedora"},
+        "cel": {"type": "str", "description": "Telefone do representante da empresa fornecedora"},
+        "email": {"type": "str", "description": "E-mail do representante da empresa fornecedora"}
+      }
     },
     "pops": [
       {
         "codigo_pdc": {"type": "str", "description": "Código do PDC associado"},
         "quantidade": {"type": "float", "description": "Quantidade do Produto Oferecido"},
-        "preco_unitario": {"type": "float", "description": "Preço unitário do Produto Oferecido"},
+        "preco_unitario": {
+          "type": "float",
+          "description": "Preço unitário do Produto Oferecido
+          Atenção : confira se o preço unitário oferecido na proposta refere-se à mesma 
+          unidade da quantidade demandada na requisição de compra. Caso contrario faça a devida
+          conversão no preço unitario. Exemplo :
+          - A unidade da quantidade demandada na requisição de compra é Kg
+          - O preço unitario oferecido na proposta é R$ 350 e refere-se a um saco de 50 Kg
+          - Voce deve tomar o preço unitário como sendo R$ 7, ou seja, 350 dividido por 50
+        },
         "semelhanca": {
           "type": "str",
           "description": "Expressa em porcentagem (Exemplo: \"40%\", \"66%\"). Calculada pela fórmula 100*X/Y onde :\n
@@ -222,4 +239,26 @@ FORMATO DE SAÍDA (exato):
 }
 """
 
+socio_comum_prompt= """
+A variavel quadros_societarios contem a relação de sócios de cada proposta, ou seja, dos sócios das
+empresas fornecedoras que enviaram propostas
+A relação de socios de cada empresa está identificada por um ID que é um caminho de arquivo. 
+Exemplo : "C:\\Users\\Fernando\\AppData\\Local\\Temp\\tmpkja6dv27\\Cimentpav.pdf"
+A informacao de cada sócio contém um nome e um cargo separados por virgula. Exemplo : João da Silva, sócio diretor"
+Pegue o nome (somente o nome, não o cargo) de cada sócio de cada proposta e confira se em alguma das
+outras propostas existe um sócio com mesmo nome (identico ou muito parecido). 
+Se isso for verdadeiro para um ou mais sócios de uma proposta, atribua "sim" ao ID desta proposta,
+caso contrario atribua "não". 
+Atribua null para as propostas que não tiverem informações sobre socios
 
+Responda APENAS com JSON válido (sem markdown, sem comentários, sem texto fora do JSON).
+Use exatamente o formato abaixo.
+
+{
+  "type": "object",
+  "additionalProperties": {
+    "type": ["boolean", "null"]
+  }
+}
+
+"""

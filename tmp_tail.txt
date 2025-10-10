@@ -152,21 +152,21 @@ def main(model, gen_config):
                     )
                     aggregated_results = _merge_results(aggregated_results, partial)
 
-                proposta_json = aggregated_results
+                propostas_json = aggregated_results
 
                 # Partes por proposta (chave: nome do PDF)
-                proposta_json = {}
-                proposta_json = {}
-                proposta_json = {}
-                for _path, _text in proposta_json.items():
+                propostas_json = {}
+                propostas_json = {}
+                propostas_json = {}
+                for _path, _text in propostas_json.items():
                     if not _text:
                         continue
                     try:
                         _nome = os.path.basename(_path)
                         _dados = json.loads(_text).get("proposta", {})
-                        proposta_json[_nome] = _dados.get("header")
-                        proposta_json[_nome] = _dados.get("pops", [])
-                        proposta_json[_nome] = _dados.get("condicoes_comerciais", [])
+                        propostas_json[_nome] = _dados.get("header")
+                        propostas_json[_nome] = _dados.get("pops", [])
+                        propostas_json[_nome] = _dados.get("condicoes_comerciais", [])
                     except Exception:
                         pass
 
@@ -176,30 +176,30 @@ def main(model, gen_config):
 
                 try:
                     response = model.generate_content(
-                        contents=[padroniza_condicomer_prompt, proposta_json],
+                        contents=[padroniza_condicomer_prompt, propostas_json],
                         generation_config=gen_config
                     )
                     
                     # Verifica se a resposta foi bem-sucedida e tem conte�do
                     if response and hasattr(response, 'text') and response.text:
-                        condicomer_padronizado = json.loads(response.text)
+                        condicomer_padronizadas = json.loads(response.text)
                     else:
                         raise ValueError("Resposta vazia ou inv�lida do modelo")
                         
                 except json.JSONDecodeError as e:
                     print(f"Erro ao decodificar JSON: {e}")
                     print(f"Conte�do recebido: {response.text if response else 'Nenhuma resposta'}")
-                    condicomer_padronizado = {}  # Ou algum valor padr�o
+                    condicomer_padronizadas = {}  # Ou algum valor padr�o
                 except Exception as e:
                     print(f"Erro inesperado: {e}")
-                    condicomer_padronizado = {}
+                    condicomer_padronizadas = {}
 
                 # 7) Gerar relat�rio final (EXCEL apenas)
                 status_ph.markdown('<p class="body-18">Gerando relat�rio final (Excel)...</p>', unsafe_allow_html=True)
                 _render_blue_progress(bar_ph, 92)
-                _ = generate_suppliers_report(proposta_json)
-                _ = generate_preco_report(rfp_json, proposta_json)
-                _ = generate_comparison_report(rfp_json, proposta_json)
+                _ = generate_suppliers_report(propostas_json)
+                _ = generate_preco_report(rfp_json, propostas_json)
+                _ = generate_comparison_report(rfp_json, propostas_json)
                 _, relatorio_final_xlsx = consolidate_reports()
 
                 st.session_state["report_xlsx"] = relatorio_final_xlsx

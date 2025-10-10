@@ -1,17 +1,14 @@
-﻿# equalprop/ui/app.py
-
-import os
+﻿import os
 import json
 import tempfile
 import streamlit as st
-
+import csv
 from equalprop.io_utils import sanitize_filename, process_files
-from equalprop.prompts import rfp_prompt, extraction_prompt_with_rules, padroniza_condicomer_prompt
+from equalprop.prompts import rfp_prompt, extraction_prompt_with_rules, padroniza_condicomer_prompt, socio_comum_prompt
 from equalprop.gemini_service import upload_pdfs_to_gemini, process_all_proposals
-from equalprop.reports.suppliers import generate_suppliers_report
-from equalprop.reports.globals import generate_preco_report
-from equalprop.reports.comparison import generate_comparison_report
+from equalprop.captura_socios import get_quadro_societario_for_list
 from equalprop.reports.consolidate import consolidate_reports
+
 
 
 # =========================
@@ -253,7 +250,7 @@ def main(model, gen_config):
 
                 # 3) Upload Gemini
                 status_ph.markdown('<p class="body-18">Subindo arquivos para a Gemini...</p>', unsafe_allow_html=True)
-                _render_blue_progress(bar_ph, 35)
+                _render_blue_progress(bar_ph, 20)
                 rfp_gemini_files = upload_pdfs_to_gemini(rfp_pdfs)
                 proposal_gemini_files = upload_pdfs_to_gemini(proposal_pdfs)
                 if not rfp_gemini_files or not proposal_gemini_files:
@@ -263,7 +260,7 @@ def main(model, gen_config):
 
                 # 4) Extrair PDCs e Cabeçalho da RFP
                 status_ph.markdown('<p class="body-18">Analisando a requisição de compra...</p>', unsafe_allow_html=True)
-                _render_blue_progress(bar_ph, 55)
+                _render_blue_progress(bar_ph, 30)
 
                 response = model.generate_content(
                     contents=[rfp_prompt, rfp_gemini_files[0]],
@@ -272,10 +269,6 @@ def main(model, gen_config):
 
                 # Processa a resposta mantendo compatibilidade
                 rfp_json = json.loads(response.text)
-
-                # Extrai as informações separadamente
-                # rfp_json = rfp_json["rfp_json"]  # Novo: informações do cabeçalho
-                # rfp_json = rfp_json["produtos_demandados"]  # Mantém compatibilidade: lista de PDCs
 
                 # 5) Processar propostas **uma por vez** mostrando o nome do PDF
                 n = len(proposal_pdfs)
@@ -287,7 +280,7 @@ def main(model, gen_config):
                         unsafe_allow_html=True
                     )
                     # Progresso dentro do intervalo 60?90
-                    pct = 60 + int(30 * (i-1) / max(n, 1))
+                    pct = 40 + int(30 * (i-1) / max(n, 1))
                     _render_blue_progress(bar_ph, pct)
 
                     partial = process_all_proposals(
@@ -300,43 +293,98 @@ def main(model, gen_config):
                     )
                     aggregated_results = _merge_results(aggregated_results, partial)
 
-                proposta_json = aggregated_results
+                propostas_json = aggregated_results
 
+                # 6 capturar quadro societario
+                # 6.1 Registrar ordem dos IDs das propostas e mapear CNPJ por ID
+                ordered_ids = list(propostas_json.keys()) if isinstance(propostas_json, dict) else []
 
-                # 6) Padronizar condições comerciais
+                def _cnpj14(x):
+                    if not x:
+                        return None
+                    s = ''.join(ch for ch in str(x) if ch.isdigit())
+                    return s if len(s) == 14 else None
+
+                cnpjs_by_id = {}
+                if isinstance(propostas_json, dict):
+                    for pid, value in propostas_json.items():
+                        try:
+                            data = json.loads(value) if isinstance(value, str) else value
+                            header = (data or {}).get('proposta', {}).get('header', {}) or {}
+                            cnpjs_by_id[pid] = _cnpj14(header.get('cnpj'))
+                        except Exception:
+                            cnpjs_by_id[pid] = None
+
+                st.session_state["proposals_order"] = ordered_ids
+                st.session_state["cnpjs_by_id"] = cnpjs_by_id
+
+                # 6.2 scraping do portal da transparencia
+                status_ph.markdown('<p class="body-18">Capturando quadros societários...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 85)
+
+                quadros_societarios = {}
+                try:
+                    quadros_societarios = get_quadro_societario_for_list(cnpjs_by_id)
+                except Exception as e:
+                    print(f"Erro no scraping (6.2): {e}")
+                    quadros_societarios = {}
+
+                # 6.3 Checar se há socios em comum
+                status_ph.markdown('<p class="body-18">Checando se há socios em comum...</p>', unsafe_allow_html=True)
+                _render_blue_progress(bar_ph, 88)
+
+                socio_comum = {}
+                try:
+                    socio_response = model.generate_content(
+                        contents=[socio_comum_prompt, json.dumps(quadros_societarios, ensure_ascii=False)],
+                        generation_config=gen_config
+                    )
+
+                    if socio_response and hasattr(socio_response, "text") and socio_response.text:
+                        socio_comum = json.loads(socio_response.text)
+                    else:
+                        raise ValueError("Resposta vazia ou inválida do modelo")
+
+                except json.JSONDecodeError as e:
+                    print(f"Erro ao decodificar JSON (6.3): {e}")
+                    print(f"Conteúdo recebido: {socio_response.text if socio_response else 'Nenhuma resposta'}")
+                    socio_comum = {}
+                except Exception as e:
+                    print(f"Erro na verificação de socios em comum (6.3): {e}")
+                    socio_comum = {}
+
+                # 7) Padronizar condições comerciais
                 status_ph.markdown('<p class="body-18">Padronizando condições comerciais...</p>', unsafe_allow_html=True)
                 _render_blue_progress(bar_ph, 90)
 
-                condicomer_bruto = None
                 try:
                     response = model.generate_content(
-                        contents=[padroniza_condicomer_prompt, json.dumps(proposta_json, ensure_ascii=False)],
+                        contents=[padroniza_condicomer_prompt, json.dumps(propostas_json, ensure_ascii=False)],
                         generation_config=gen_config
                     )
-                    condicomer_bruto = response.text if response and hasattr(response, "text") else None
+
                     # Verifica se a resposta foi bem-sucedida e tem conteúdo
                     if response and hasattr(response, 'text') and response.text:
-                        condicomer_padronizado = json.loads(response.text)
+                        condicomer_padronizadas = json.loads(response.text)
                     else:
                         raise ValueError("Resposta vazia ou inválida do modelo")
                         
                 except json.JSONDecodeError as e:
                     print(f"Erro ao decodificar JSON: {e}")
                     print(f"Conteúdo recebido: {response.text if response else 'Nenhuma resposta'}")
-                    condicomer_padronizado = {}  # Ou algum valor padrão
+                    condicomer_padronizadas = {}  # Ou algum valor padrão
                 except Exception as e:
                     print(f"Erro inesperado: {e}")
-                    condicomer_padronizado = {}
+                    condicomer_padronizadas = {}
 
-                # (fallback removido por solicitação)
 
-                # 7) Gerar relatório final (EXCEL apenas)
+                # 8) Gerar relatório final (EXCEL apenas)
                 status_ph.markdown('<p class="body-18">Gerando relatório final (Excel)...</p>', unsafe_allow_html=True)
                 _render_blue_progress(bar_ph, 92)
                 # Proteger o diretório de trabalho do Streamlit contra mudanças internas
                 cwd_before = os.getcwd()
                 try:
-                    _, relatorio_final_xlsx = consolidate_reports(rfp_json, proposta_json, condicomer_padronizado)
+                    _, relatorio_final_xlsx = consolidate_reports(rfp_json, propostas_json, condicomer_padronizadas, quadros_societarios, socio_comum)
                 finally:
                     try:
                         os.chdir(cwd_before)
@@ -389,5 +437,4 @@ def main(model, gen_config):
             if _dangerize("Interromper", key="btn_abort_done"):
                 _reset_all()
         return
-
 

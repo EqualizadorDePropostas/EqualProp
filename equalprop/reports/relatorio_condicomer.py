@@ -75,7 +75,7 @@ def _as_list_of_pairs(obj: Any) -> List[Tuple[str, str]]:
     return pairs
 
 
-def _extract_proposals(condicomer_padronizado: Any) -> List[Dict[str, str]]:
+def _extract_proposals(condicomer_padronizadas: Any) -> List[Dict[str, str]]:
     """Extrai até 5 propostas como dicionários {condicao: valor}.
 
     Formatos aceitos:
@@ -89,16 +89,16 @@ def _extract_proposals(condicomer_padronizado: Any) -> List[Dict[str, str]]:
     result: List[Dict[str, str]] = []
 
     # Permitir que venha como string JSON
-    if isinstance(condicomer_padronizado, (str, bytes)):
+    if isinstance(condicomer_padronizadas, (str, bytes)):
         try:
-            condicomer_padronizado = json.loads(condicomer_padronizado)  # type: ignore[arg-type]
+            condicomer_padronizadas = json.loads(condicomer_padronizadas)  # type: ignore[arg-type]
         except Exception:
             return result
 
     # 0.a) Top-level como lista de propostas [{arquivo, proposta:{condicoes_comerciais:[...]}}]
-    if isinstance(condicomer_padronizado, list):
+    if isinstance(condicomer_padronizadas, list):
         collected: List[Dict[str, str]] = []
-        for entry in condicomer_padronizado:
+        for entry in condicomer_padronizadas:
             if not isinstance(entry, dict):
                 continue
             container: Any = entry
@@ -132,9 +132,9 @@ def _extract_proposals(condicomer_padronizado: Any) -> List[Dict[str, str]]:
         return result
 
     # 0) Mapa por arquivo (valores podem ser dict com 'proposta' ou já lista)
-    if 'propostas' not in condicomer_padronizado and 'condicoes_comerciais' not in condicomer_padronizado:
+    if 'propostas' not in condicomer_padronizadas and 'condicoes_comerciais' not in condicomer_padronizadas:
         collected: List[Dict[str, str]] = []
-        for _k, v in condicomer_padronizado.items():
+        for _k, v in condicomer_padronizadas.items():
             if isinstance(v, str):
                 try:
                     v = json.loads(v)
@@ -188,8 +188,8 @@ def _extract_proposals(condicomer_padronizado: Any) -> List[Dict[str, str]]:
             return collected[:20]
 
     # 1) { "propostas": { "proposta_1": {condicoes_comerciais: [...]}, ... } }
-    if 'propostas' in condicomer_padronizado and isinstance(condicomer_padronizado['propostas'], dict):
-        for _prop_key, prop_val in condicomer_padronizado['propostas'].items():
+    if 'propostas' in condicomer_padronizadas and isinstance(condicomer_padronizadas['propostas'], dict):
+        for _prop_key, prop_val in condicomer_padronizadas['propostas'].items():
             conds: Dict[str, str] = {}
             if isinstance(prop_val, dict):
                 idx = _norm_key_name_map(prop_val)
@@ -217,8 +217,8 @@ def _extract_proposals(condicomer_padronizado: Any) -> List[Dict[str, str]]:
             result.append(conds)
 
     # 3) { "condicoes_comerciais": [ {"chave":..., "proposta_1":..., ...}, ... ] }
-    elif 'condicoes_comerciais' in condicomer_padronizado and isinstance(condicomer_padronizado['condicoes_comerciais'], list):
-        items = condicomer_padronizado['condicoes_comerciais']
+    elif 'condicoes_comerciais' in condicomer_padronizadas and isinstance(condicomer_padronizadas['condicoes_comerciais'], list):
+        items = condicomer_padronizadas['condicoes_comerciais']
         max_idx = 0
         for it in items:
             if isinstance(it, dict):
@@ -243,8 +243,8 @@ def _extract_proposals(condicomer_padronizado: Any) -> List[Dict[str, str]]:
                     result[i - 1][key] = 'null' if val in (None, 'null', '') else str(val)
 
     # 2) { "condicoes_comerciais": { "proposta_1": {...}, ... } }
-    elif 'condicoes_comerciais' in condicomer_padronizado and isinstance(condicomer_padronizado['condicoes_comerciais'], dict):
-        for _prop_key, cc in condicomer_padronizado['condicoes_comerciais'].items():
+    elif 'condicoes_comerciais' in condicomer_padronizadas and isinstance(condicomer_padronizadas['condicoes_comerciais'], dict):
+        for _prop_key, cc in condicomer_padronizadas['condicoes_comerciais'].items():
             conds: Dict[str, str] = {}
             for k, v in _as_list_of_pairs(cc):
                 conds[k] = v
@@ -252,10 +252,10 @@ def _extract_proposals(condicomer_padronizado: Any) -> List[Dict[str, str]]:
 
     # 2.b/3.b) variantes camelCase/norm (condicoesComerciais)
     else:
-        idx_top = _norm_key_name_map(condicomer_padronizado)
+        idx_top = _norm_key_name_map(condicomer_padronizadas)
         alt_key = idx_top.get('condicoescomerciais')
         if alt_key:
-            alt_val = condicomer_padronizado.get(alt_key)
+            alt_val = condicomer_padronizadas.get(alt_key)
             if isinstance(alt_val, dict):
                 for _prop_key, cc in alt_val.items():
                     conds: Dict[str, str] = {}
@@ -290,7 +290,7 @@ def _extract_proposals(condicomer_padronizado: Any) -> List[Dict[str, str]]:
     return result[:20]
 
 
-def generate_condicomer_report(condicomer_padronizado: Any, filename: str = 'relatorio_condicomer.csv') -> str:
+def generate_condicomer_report(condicomer_padronizadas: Any, filename: str = 'relatorio_condicomer.csv') -> str:
     """Gera o CSV de condições comerciais no layout solicitado.
 
     Colunas (18):
@@ -298,7 +298,7 @@ def generate_condicomer_report(condicomer_padronizado: Any, filename: str = 'rel
     6: valor prop1, 7-8 vazias, 9: valor prop2, 10-11 vazias,
     12: valor prop3, 13-14 vazias, 15: valor prop4, 16-17 vazias, 18: valor prop5.
     """
-    proposals = _extract_proposals(condicomer_padronizado)
+    proposals = _extract_proposals(condicomer_padronizadas)
     try:
         print(f"[DEBUG condicomer] propostas extraídas: {len(proposals)}")
     except Exception:
@@ -314,7 +314,7 @@ def generate_condicomer_report(condicomer_padronizado: Any, filename: str = 'rel
         if len(sorted_keys) == 0:
             dbg_path = 'relatorio_condicomer_debug.json'
             with open(dbg_path, 'w', encoding='utf-8') as f:
-                json.dump(condicomer_padronizado, f, ensure_ascii=False, indent=2)
+                json.dump(condicomer_padronizadas, f, ensure_ascii=False, indent=2)
             print(f"[DEBUG condicomer] Nenhuma chave encontrada. Payload salvo em {dbg_path}")
     except Exception:
         pass

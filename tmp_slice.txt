@@ -2,8 +2,8 @@
     # ---------- TELA 3 (RUNNING) ----------
     if st.session_state["stage"] == "running":
         # Linhas com nomes (cinza)
-        _selected_line_muted("Requisição RFP/RFQ (um arquivo PDF)", _join_names(st.session_state["rfp_file"]))
-        _selected_line_muted("Propostas comerciais (vários arquivos PDF)", _join_names(st.session_state["proposal_files"]))
+        _selected_line_muted("Requisiï¿½ï¿½o RFP/RFQ (um arquivo PDF)", _join_names(st.session_state["rfp_file"]))
+        _selected_line_muted("Propostas comerciais (vï¿½rios arquivos PDF)", _join_names(st.session_state["proposal_files"]))
 
         # Linha "Aguarde..." + Interromper
         c1, c2 = st.columns([0.7, 0.3], vertical_alignment="center")
@@ -14,7 +14,7 @@
             if _dangerize("Interromper", key="btn_abort_run"):
                 _reset_all()
 
-        # Placeholders visíveis (linha de status + barra azul)
+        # Placeholders visï¿½veis (linha de status + barra azul)
         status_ph = st.empty()      # linha da tarefa atual
         bar_ph = st.empty()         # barra de progresso AZUL
 
@@ -61,8 +61,8 @@
                     _render_blue_progress(bar_ph, 0)
                     return
 
-                # 4) Extrair PDCs e Cabeçalho da RFP
-                status_ph.markdown('<p class="body-18">Analisando a requisição de compra...</p>', unsafe_allow_html=True)
+                # 4) Extrair PDCs e Cabeï¿½alho da RFP
+                status_ph.markdown('<p class="body-18">Analisando a requisiï¿½ï¿½o de compra...</p>', unsafe_allow_html=True)
                 _render_blue_progress(bar_ph, 55)
 
                 response = model.generate_content(
@@ -73,9 +73,9 @@
                 # Processa a resposta mantendo compatibilidade
                 rfp_json = json.loads(response.text)
 
-                # Extrai as informações separadamente
-                # rfp_json = rfp_json["rfp_json"]  # Novo: informações do cabeçalho
-                # rfp_json = rfp_json["produtos_demandados"]  # Mantém compatibilidade: lista de PDCs
+                # Extrai as informaï¿½ï¿½es separadamente
+                # rfp_json = rfp_json["rfp_json"]  # Novo: informaï¿½ï¿½es do cabeï¿½alho
+                # rfp_json = rfp_json["produtos_demandados"]  # Mantï¿½m compatibilidade: lista de PDCs
 
                 # 5) Processar propostas **uma por vez** mostrando o nome do PDF
                 n = len(proposal_pdfs)
@@ -100,60 +100,60 @@
                     )
                     aggregated_results = _merge_results(aggregated_results, partial)
 
-                proposta_json = aggregated_results
+                propostas_json = aggregated_results
 
                 # Partes por proposta (chave: nome do PDF)
-                # proposta_json = {}
-                # proposta_json = {}
-                # proposta_json = {}
-                # for _path, _text in proposta_json.items():
+                # propostas_json = {}
+                # propostas_json = {}
+                # propostas_json = {}
+                # for _path, _text in propostas_json.items():
                 #     if not _text:
                 #         continue
                 #     try:
                 #         _nome = os.path.basename(_path)
                 #         _dados = json.loads(_text).get("proposta", {})
-                #         proposta_json[_nome] = _dados.get("header")
-                #         proposta_json[_nome] = _dados.get("pops", [])
-                #         proposta_json[_nome] = _dados.get("condicoes_comerciais", [])
+                #         propostas_json[_nome] = _dados.get("header")
+                #         propostas_json[_nome] = _dados.get("pops", [])
+                #         propostas_json[_nome] = _dados.get("condicoes_comerciais", [])
                 #     except Exception:
                 #         pass
 
-                # 6) Padronizar condições comerciais
-                status_ph.markdown('<p class="body-18">Padronizando condições comerciais...</p>', unsafe_allow_html=True)
+                # 6) Padronizar condiï¿½ï¿½es comerciais
+                status_ph.markdown('<p class="body-18">Padronizando condiï¿½ï¿½es comerciais...</p>', unsafe_allow_html=True)
                 _render_blue_progress(bar_ph, 90)
 
                 condicomer_bruto = None
                 try:
                     response = model.generate_content(
-                        contents=[padroniza_condicomer_prompt, json.dumps(proposta_json, ensure_ascii=False)],
+                        contents=[padroniza_condicomer_prompt, json.dumps(propostas_json, ensure_ascii=False)],
                         generation_config=gen_config
                     )
                     condicomer_bruto = response.text if response and hasattr(response, "text") else None
-                    # Verifica se a resposta foi bem-sucedida e tem conteúdo
+                    # Verifica se a resposta foi bem-sucedida e tem conteï¿½do
                     if response and hasattr(response, 'text') and response.text:
-                        condicomer_padronizado = json.loads(response.text)
+                        condicomer_padronizadas = json.loads(response.text)
                     else:
-                        raise ValueError("Resposta vazia ou inválida do modelo")
+                        raise ValueError("Resposta vazia ou invï¿½lida do modelo")
                         
                 except json.JSONDecodeError as e:
                     print(f"Erro ao decodificar JSON: {e}")
-                    print(f"Conteúdo recebido: {response.text if response else 'Nenhuma resposta'}")
-                    condicomer_padronizado = {}  # Ou algum valor padrão
+                    print(f"Conteï¿½do recebido: {response.text if response else 'Nenhuma resposta'}")
+                    condicomer_padronizadas = {}  # Ou algum valor padrï¿½o
                 except Exception as e:
                     print(f"Erro inesperado: {e}")
-                    condicomer_padronizado = {}
+                    condicomer_padronizadas = {}
 
-                # 7) Gerar relatório final (EXCEL apenas)
-                status_ph.markdown('<p class="body-18">Gerando relatório final (Excel)...</p>', unsafe_allow_html=True)
+                # 7) Gerar relatï¿½rio final (EXCEL apenas)
+                status_ph.markdown('<p class="body-18">Gerando relatï¿½rio final (Excel)...</p>', unsafe_allow_html=True)
                 _render_blue_progress(bar_ph, 92)
-                _ = generate_suppliers_report(proposta_json)
-                _ = generate_preco_report(rfp_json, proposta_json)
-                _ = generate_comparison_report(rfp_json, proposta_json)
+                _ = generate_suppliers_report(propostas_json)
+                _ = generate_preco_report(rfp_json, propostas_json)
+                _ = generate_comparison_report(rfp_json, propostas_json)
                 _, relatorio_final_xlsx = consolidate_reports()
 
                 st.session_state["report_xlsx"] = relatorio_final_xlsx
 
-                status_ph.markdown('<p class="body-18">Concluído.</p>', unsafe_allow_html=True)
+                status_ph.markdown('<p class="body-18">Concluï¿½do.</p>', unsafe_allow_html=True)
                 _render_blue_progress(bar_ph, 100)
 
                 st.session_state["stage"] = "done"

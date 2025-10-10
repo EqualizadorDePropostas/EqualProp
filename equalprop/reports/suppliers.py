@@ -2,7 +2,7 @@ import csv
 import json
 
 
-def generate_suppliers_report(proposta_json, filename: str = 'relatorio_fornecedores.csv'):
+def generate_suppliers_report(propostas_json, filename: str = 'relatorio_fornecedores.csv'):
     def format_text(text):
         if text is None:
             return 'null'
@@ -24,7 +24,7 @@ def generate_suppliers_report(proposta_json, filename: str = 'relatorio_forneced
 
     # Extrair headers das propostas (convertendo de JSON string quando necessário)
     headers = []
-    for value in proposta_json.values():
+    for value in propostas_json.values():
         try:
             data = json.loads(value) if isinstance(value, str) else value
             header = data.get('proposta', {}).get('header', {})

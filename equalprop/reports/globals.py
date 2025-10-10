@@ -77,12 +77,12 @@ def _normalize_rfp(rfp_json: Any) -> List[Dict[str, Any]]:
     return norm
 
 
-# def _collect_pops_by_pdc(proposta_json: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
-#     """Agrupa POPs por código PDC, lendo cada valor de proposta_json
+# def _collect_pops_by_pdc(propostas_json: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+#     """Agrupa POPs por código PDC, lendo cada valor de propostas_json
 #     que pode ser uma string JSON com a chave raiz 'proposta'.
 #     """
 #     by_pdc: Dict[str, List[Dict[str, Any]]] = {}
-#     for value in proposta_json.values():
+#     for value in propostas_json.values():
 #         try:
 #             data = json.loads(value) if isinstance(value, str) else value
 #         except Exception:
@@ -104,7 +104,7 @@ def _normalize_rfp(rfp_json: Any) -> List[Dict[str, Any]]:
 #     return by_pdc
 
 
-def generate_preco_report(rfp_json: Dict[str, Any], proposta_json: Dict[str, Any], filename: str = 'relatorio_preco.csv') -> None:
+def generate_preco_report(rfp_json: Dict[str, Any], propostas_json: Dict[str, Any], filename: str = 'relatorio_preco.csv') -> None:
     """Gera relatorio_preco.csv exatamente no modelo solicitado.
 
     - Não realiza cálculos; apenas preenche os campos e insere os textos
@@ -116,7 +116,7 @@ def generate_preco_report(rfp_json: Dict[str, Any], proposta_json: Dict[str, Any
 
     # Processar propostas preservando ordem (até 5)
     processed_proposals: List[Dict[str, Any]] = []
-    for value in proposta_json.values():
+    for value in propostas_json.values():
         if not value:
             continue
         try:

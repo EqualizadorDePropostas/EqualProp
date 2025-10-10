@@ -28,7 +28,30 @@
       },
       "console": "integratedTerminal",
       "justMyCode": true
+    },
+    {
+      "name": "Debug equalprop/captura_socios (module)",
+      "type": "python",
+      "request": "launch",
+      "module": "equalprop.captura_socios",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Debug equalprop/captura_socios.py (file)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/equalprop/captura_socios.py",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true
     }
   ]
 }
-

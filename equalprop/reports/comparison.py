@@ -2,14 +2,14 @@ import json
 import csv
 
 
-def generate_comparison_report(rfp_json, proposta_json, filename="comparacao_produtos.csv"):
+def generate_comparison_report(rfp_json, propostas_json, filename="comparacao_produtos.csv"):
     """Gera relatório de comparação de produtos.
 
-    Robusto para diferentes formatos de rfp_json e para proposta_json como
+    Robusto para diferentes formatos de rfp_json e para propostas_json como
     dict de caminho->string JSON (com raiz 'proposta').
     """
     processed_proposals = []
-    for proposal_json in proposta_json.values():
+    for proposal_json in propostas_json.values():
         if not proposal_json:
             continue
         try:

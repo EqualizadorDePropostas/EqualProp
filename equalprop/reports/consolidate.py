@@ -1,4 +1,4 @@
-Ôªøimport csv
+import csv
 import re
 import openpyxl
 import os
@@ -11,9 +11,10 @@ from .globals import generate_preco_report
 from .comparison import generate_comparison_report
 from .relatorio_rfp_cabecalho import generate_rfp_header_report
 from .relatorio_condicomer import generate_condicomer_report
+from .relatorio_socios import generate_socios_report
 
 
-def consolidate_reports(rfp_json=None, proposta_json=None, condicomer_padronizado=None, out_dir=None):
+def consolidate_reports(rfp_json=None, propostas_json=None, condicomer_padronizadas=None, quadros_societarios=None, socio_comum=None, out_dir=None):
     """Gera e consolida relatorios em CSV e Excel.
 
     Ordem:
@@ -21,7 +22,8 @@ def consolidate_reports(rfp_json=None, proposta_json=None, condicomer_padronizad
     2) relatorio_fornecedores.csv
     3) relatorio_preco.csv
     4) relatorio_condicomer.csv
-    5) comparacao_produtos.csv
+    5) relatorio_socios.csv
+    6) comparacao_produtos.csv
     """
     # Preparar out_dir e entrar nele para nao misturar com execucoes anteriores
     if out_dir is None:
@@ -74,21 +76,21 @@ def consolidate_reports(rfp_json=None, proposta_json=None, condicomer_padronizad
         if path_rfp:
             generated_files['relatorio_rfp_cabecalho.csv'] = path_rfp
 
-    if proposta_json is not None:
+    if propostas_json is not None:
         path_suppliers = _safe_generate(
             generate_suppliers_report,
             os.path.join(out_dir, 'relatorio_fornecedores.csv'),
-            proposta_json
+            propostas_json
         )
         if path_suppliers:
             generated_files['relatorio_fornecedores.csv'] = path_suppliers
 
-    if rfp_json is not None and proposta_json is not None:
+    if rfp_json is not None and propostas_json is not None:
         path_preco = _safe_generate(
             generate_preco_report,
             os.path.join(out_dir, 'relatorio_preco.csv'),
             rfp_json,
-            proposta_json
+            propostas_json
         )
         if path_preco:
             generated_files['relatorio_preco.csv'] = path_preco
@@ -97,19 +99,53 @@ def consolidate_reports(rfp_json=None, proposta_json=None, condicomer_padronizad
             generate_comparison_report,
             os.path.join(out_dir, 'comparacao_produtos.csv'),
             rfp_json,
-            proposta_json
+            propostas_json
         )
         if path_comparacao:
             generated_files['comparacao_produtos.csv'] = path_comparacao
 
-    if condicomer_padronizado is not None:
+    if condicomer_padronizadas is not None:
         path_condicomer = _safe_generate(
             generate_condicomer_report,
             os.path.join(out_dir, 'relatorio_condicomer.csv'),
-            condicomer_padronizado
+            condicomer_padronizadas
         )
         if path_condicomer:
             generated_files['relatorio_condicomer.csv'] = path_condicomer
+    # Gerar relatorio_socios.csv independentemente dos dados disponiveis
+    path_socios = None
+    cwd_before = os.getcwd()
+    try:
+        os.chdir(out_dir)
+        result_path = generate_socios_report(quadros_societarios or {}, socio_comum or {})
+        if not result_path:
+            result_path = 'relatorio_socios.csv'
+        if not os.path.isabs(result_path):
+            result_path = os.path.join(out_dir, result_path)
+        path_socios = os.path.abspath(result_path)
+    except PermissionError as e:
+        print(f"[AVISO] Falha ao gerar relatorio_socios.csv: {e}")
+    except Exception as e:
+        print(f"[AVISO] Falha ao gerar relatorio_socios.csv: {e}")
+    finally:
+        try:
+            os.chdir(cwd_before)
+        except Exception:
+            pass
+    fallback_socios_path = os.path.join(out_dir, 'relatorio_socios.csv')
+    if path_socios and os.path.exists(path_socios):
+        generated_files['relatorio_socios.csv'] = path_socios
+    else:
+        try:
+            with open(fallback_socios_path, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['Quadro de socios e administradores', '', '', '', ''])
+                writer.writerow(['Propostas em que ha socios em comum ', '', '', '', ''])
+        except Exception as e:
+            print(f"[AVISO] Falha ao criar fallback de relatorio_socios.csv: {e}")
+        else:
+            generated_files['relatorio_socios.csv'] = fallback_socios_path
+
 
     for logical_name, actual_path in list(generated_files.items()):
         canonical_path = os.path.join(out_dir, logical_name)
@@ -122,24 +158,25 @@ def consolidate_reports(rfp_json=None, proposta_json=None, condicomer_padronizad
             except Exception as copy_err:
                 print(f"[AVISO] Nao foi possivel atualizar {logical_name}: {copy_err}")
 
-    # Substituir esta se√ß√£o (linhas ~60-80) por:
+    # Substituir esta seÁ„o (linhas ~60-80) por:
     for nome in (
         "relatorio_rfp_cabecalho.csv",
-        "relatorio_fornecedores.csv", 
+        "relatorio_fornecedores.csv",
         "relatorio_preco.csv",
+        "relatorio_socios.csv",
         "comparacao_produtos.csv",
     ):
         src = os.path.abspath(nome)
         dst = os.path.join(out_dir, nome)
         try:
             if os.path.exists(src):
-                # SEM verifica√ß√£o de timestamp - sempre mover se existir
+                # SEM verificaÁ„o de timestamp - sempre mover se existir
                 if not os.path.exists(dst):
                     shutil.move(src, dst)
         except Exception:
             pass
 
-    # N√ÉO mover relatorio_condicomer.csv pois j√° foi gerado direto no out_dir
+    # N√O mover relatorio_condicomer.csv pois j· foi gerado direto no out_dir
 
     
     tabela_specs = [
@@ -147,6 +184,7 @@ def consolidate_reports(rfp_json=None, proposta_json=None, condicomer_padronizad
         ('relatorio_fornecedores.csv', os.path.join(out_dir, 'relatorio_fornecedores.csv')),
         ('relatorio_preco.csv', os.path.join(out_dir, 'relatorio_preco.csv')),
         ('relatorio_condicomer.csv', os.path.join(out_dir, 'relatorio_condicomer.csv')),
+        ('relatorio_socios.csv', os.path.join(out_dir, 'relatorio_socios.csv')),
         ('comparacao_produtos.csv', os.path.join(out_dir, 'comparacao_produtos.csv')),
     ]
     tabelas = []
@@ -390,6 +428,14 @@ def consolidate_reports(rfp_json=None, proposta_json=None, condicomer_padronizad
         sep_col = c + 2
         if sep_col <= sheet.max_column:
             black_cols.add(sep_col)
+    socios_sec = by_name.get('relatorio_socios.csv')
+    if socios_sec:
+        ncols_socios = socios_sec.get('first_cols') or sheet.max_column
+        c = 6
+        while c + 2 <= ncols_socios:
+            black_cols.add(c + 2)
+            c += 3
+
 
     max_row = sheet.max_row
     max_col = sheet.max_column
@@ -526,6 +572,49 @@ def consolidate_reports(rfp_json=None, proposta_json=None, condicomer_padronizad
                 right_cell.border = Border(left=b.left, right=Side(border_style='thick', color='000000'), top=b.top, bottom=b.bottom)
                 c += 3
 
+    # Linhas do relatorio_socios
+    sec = by_name.get('relatorio_socios.csv')
+    if sec:
+        _style_header_row(sec)
+        ncols = sec.get('first_cols') or sheet.max_column
+        start_row = sec['start']
+        end_row = sec['start'] + sec['rows'] - 1
+        left_cols = []
+        c = 6
+        while c + 2 <= ncols:
+            left_cols.append(c)
+            c += 3
+        if left_cols:
+            wrap_top_left = Alignment(horizontal='left', vertical='top', wrap_text=True)
+            data_start = start_row + 2
+            for rr in range(start_row, end_row + 1):
+                if rr >= data_start:
+                    current_height = sheet.row_dimensions[rr].height
+                    sheet.row_dimensions[rr].height = current_height * 2 if current_height else 30
+                for left_col in left_cols:
+                    sheet.merge_cells(start_row=rr, start_column=left_col, end_row=rr, end_column=left_col + 2)
+                    cell = sheet.cell(row=rr, column=left_col)
+                    if rr >= data_start:
+                        if cell.value is None:
+                            cell.value = ''
+                        cell.alignment = wrap_top_left
+            for rr in range(start_row, end_row + 1):
+                for left_col in left_cols:
+                    thick_target = sheet.cell(row=rr, column=left_col + 2)
+                    b = thick_target.border
+                    thick_target.border = Border(left=b.left, right=Side(border_style='thick', color='000000'), top=b.top, bottom=b.bottom)
+                    left_cell = sheet.cell(row=rr, column=left_col)
+                    bleft = left_cell.border
+                    left_cell.border = Border(left=bleft.left, right=Side(border_style='thin', color='FFFFFF'), top=bleft.top, bottom=bleft.bottom)
+            second_row = start_row + 1
+            if second_row <= sheet.max_row:
+                red_fill = PatternFill(fill_type='solid', start_color='FF0000', end_color='FF0000')
+                for left_col in left_cols:
+                    cell = sheet.cell(row=second_row, column=left_col)
+                    value = cell.value
+                    if isinstance(value, str) and value.strip().lower() == 'sim':
+                        cell.fill = red_fill
+
     # Primeira linha do comparacao_produtos
     sec = by_name.get('comparacao_produtos.csv')
     if sec:
@@ -555,6 +644,15 @@ def consolidate_reports(rfp_json=None, proposta_json=None, condicomer_padronizad
     abs_xlsx = os.path.abspath(xlsx_path)
     print(f"[OK] Relatorio consolidado: {abs_csv} e {abs_xlsx}")
     return abs_csv, abs_xlsx
+
+
+
+
+
+
+
+
+
 
 
 
