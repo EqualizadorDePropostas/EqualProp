@@ -1,59 +1,60 @@
 
 Obra,,Obras Civis
-Solicitante,,Miriam Ferreira J Dos Santos
-Data da requisição,,2024-12-17
-Data de necessidade,,2025-01-05
-Comprador,,null
+Solicitante,,Bruna Ferreira B. Da Silva
+Data da requisição,,2025-03-19
+Data de necessidade,,2025-03-27
+Comprador,,Andre Romeiro Rocha
 
-,,,,,Fornecedor 1,,,Fornecedor 2,,,Fornecedor 3,,,Envoltório dos mínimos,,,Fornecedor vencedor
-Empresa,,,,,Bimpavi Indústria E Comércio De Artefatos De Cimento Ltda,,,Pré-Moldados,,,Drenaltec Industria E Comercio Ltda,,
-CNPJ,,,,,47.980.156/0001-40,,,null,,,14.989.343/0001-35,,
-Tel,,,,,(11) 4827-0290,,,(11)3813-8441,,,(19) 3203-4307,,
-Cel,,,,,null,,,(11)940323502,,,null,,
-email,,,,,null,,,saopaulo@tatu.com.br,,,null,,
-Contato,,,,,Erika,,,Marlene Barros,,,Bruna Cristina,,
+,,,,,Fornecedor 1,,,Fornecedor 2,,,Fornecedor 3,,,Fornecedor 4,,,Envoltório dos mínimos,,,Fornecedor vencedor
+Empresa,,,,,Galua Soluções Industriais Ltda,,,Mi Comercio,,,Temfer Material De Construção,,,Comercial Vana Eireli,,
+CNPJ,,,,,23.973.668/0001-10,,,null,,,63022024000161,,,17.891.648/0001-06,,
+Tel,,,,,(11) 99806-7738,,,(11) 5031-303,,,1150918044,,,(11) 99824-9861,,
+Cel,,,,,null,,,null,,,null,,,null,,
+email,,,,,null,,,novaconstru.mat@gmail.co,,,temfercobranca@gmail.com,,,adriana@cimentofort.com.br,,
+Contato,,,,,Bruno Bracetti,,,Joao Carlos,,,Adilson Otavio Da Silva,,,Adriana Corrêa,,
 
-Item,ASTREIN,Descrição,qtd,und,R$ unit,R$ total,Semelhança,R$ unit,R$ total,Semelhança,R$ unit,R$ total,Semelhança,R$ unit,R$ total,,R$ unit,R$ total
-,,descrição do produto: guia concreto-ruas/avenidas; tipo concreto: pre-moldado; modelo: reta; padrao: prefeitura sao paulo; altura: 20 cm; largura maior: 8 cm; comprimento: 40 cm,1521.93,MT,null,excel formula 1,38%,20.032,excel formula 1,43%,49.0,excel formula 1,50%,excel formula 3,excel formula 1,,,
-,,"descrição do produto: guia concreto-ruas/avenidas; tipo concreto: armado; modelo: rebaixada; padrao: prefeitura sao paulo; altura: 30 cm; largura maior: 40 cm; comprimento: 60 cm; caracteristicas adicionais: cor cinza claro munsell n 6,5",50,MT,null,excel formula 1,33%,null,excel formula 1,null,120.0,excel formula 1,44%,excel formula 3,excel formula 1,,,
-,,descrição do produto: guia concreto-ruas/avenidas; tipo concreto: pre-moldado; modelo: reta; padrao: prefeitura sao paulo; altura: 30 cm; largura maior: 15 cm; comprimento: 100 cm,1433,MT,49.0,excel formula 1,100%,41.763,excel formula 1,57%,120.0,excel formula 1,88%,excel formula 3,excel formula 1,,,
-,,Total,,,,excel formula 2,,,excel formula 2,,,excel formula 2,,,excel formula 2,,,
+Item,ASTREIN,Descrição,qtd,und,R$ unit,R$ total,Semelhança,R$ unit,R$ total,Semelhança,R$ unit,R$ total,Semelhança,R$ unit,R$ total,Semelhança,R$ unit,R$ total,,R$ unit,R$ total
+,,argamassa/rejunte industrializado; produto: argamassa assentamento; fabricante: ecomix; referencia: abnt nbr 14725:2012; cor: cinza; apresentacao: 50 kg,150000,KG,36.91,excel formula 1,60%,29.9,excel formula 1,42%,null,excel formula 1,null,28.0,excel formula 1,71%,excel formula 3,excel formula 1,,,
+,,argamassa/rejunte industrializado; produto: argamassa colante; fabricante: construcola; referencia: int/ext aciii; cor: cinza; apresentacao: 20 kg,800,SC,48.45,excel formula 1,67%,54.9,excel formula 1,80%,43.4,excel formula 1,71%,33.0,excel formula 1,71%,excel formula 3,excel formula 1,,,
+,,Total,,,,excel formula 2,,,excel formula 2,,,excel formula 2,,,excel formula 2,,,excel formula 2,,,
 
-Item,,Condições comerciais,,,,,,,,,,,
-,,Condições de pagamento,,,"Pagamento de 100% a vista; pagamento total em até 3 x no cartão de crédito sem juros; pagamento de 50% a vista (antecipado) e 50% faturado 28 dias, mediante análise.",,,"Carteira a vista, cartao de credito ou faturado",,,Para 28 dias,,
-,,Data da proposta,,,null,,,null,,,07/01/2025,,
-,,Descarga,,,Por conta do cliente,,,null,,,null,,
-,,Frete,,,Incluso no preço,,,"Valores de frete para viagens completas, com descarga por conta do transportador. o frete será faturado diretamente do transportador, com emissão de nota de conhecimento de transporte.",,,"R$ 50.663,00 a pagar após entrega",,
-,,Garantia,,,null,,,null,,,90 dias da data da entrega do produto,,
-,,Impostos,,,null,,,Inclusos nos preços. quando o material for entregue fora do estado de são paulo a diferença dda aliquota de icms ficará por conta do cliente.,,,null,,
-,,Local de entrega,,,Campo-belo-sp,,,null,,,null,,
-,,Política de cobrança de pallets,,,null,,,"Caso o pallet fique retido na obra, haverá cobrança imediata no valor de r$ 55,00 por pallet. para vendas com retira, o valor será de r$ 55,00, com pagamento no momento da retirada.",,,null,,
-,,Prazo de entrega,,,Em até 20 dias úteis após confirmação do pedido de compra,,,15 dias úteis,,,25 dias úteis,,
-,,Previsão de faturamento,,,15/01/2025,,,null,,,null,,
-,,Reajuste,,,null,,,Conforme variação do preço do cimento e agregados,,,null,,
-,,Validade da proposta,,,15 dias,,,1 dias,,,"10 dias corridos, a partir de sua emissão",,
-,,Vencimento,,,15/01/2025,,,null,,,null,,
+Item,,Condições comerciais,,,,,,,,,,,,,,
+,,Condições de pagamento,,,28 dias,,,null,,,"Operante (transferencia) 01- 25/3/2025 - 208320,00",,,Boleto 28 dd,,
+,,Frete,,,Fob sp,,,1990.00,,,"0,00",,,Cif,,
+,,Local de entrega,,,null,,,null,,,null,,,Obra 17 linha ouro - (diversos),,
+,,Prazo de entrega,,,null,,,null,,,null,,,1 a 2 dias,,
+,,Prazo para troca,,,null,,,null,,,7 dias,,,null,,
+,,Prazo para utilização de créditos,,,null,,,null,,,90 dias,,,null,,
+,,Validade da proposta,,,10 dias,,,20/12/2023,,,01/04/2025,,,10 dias,,
 
-Quadro de socios e administradores,,,,,,,,,,,,,
-Propostas em que ha socios em comum :,,,,,Não,,,,,,Não,,
-,,,,,"Anibal Vido, Sócio-administrador",,,null,,,"Luciana Maria Silverio Gusmao, Sócio",,
-,,,,,,,,,,,"Luis Fernando Andrade Da Silva, Sócio-administrador",,
-,,,,,,,,,,,"Valter Braz Gusmao, Sócio-administrador",,
+Quadro de sócios e administradores,,,,,,,,,,,,,,,,
+Este CNPJ tem sócio em comum com outro CNPJ ?,,,,,Não,,,,,,Não,,,Não,,
+,,,,,"Bruno Romeiro Bracetti, Sócio-administrador",,,null,,,"Fabiano Carrieri, Sócio-administrador",,,"Admir Nava Ferreira, Sócio-administrador",,
+,,,,,,,,,,,"Jose Carlos Carrieri, Sócio-administrador",,,,,
 
-*******IGNORE ESTA PARTE DO RELATORIO (ela será eventualmente consultada pelos desenvolvedores deste aplicativo para esclarecer duvidas sobre o comportamento da IA) ,,,,,,,,,
-Cod Produto,Fornecedor,Preço_unitario,Quantidade,Semelhança,Descrição,Num_ordem,Reasoning,,
-
-PDC1,RFP,,1521.93,,Descrição do Produto: GUIA CONCRETO-RUAS/AVENIDAS | TIPO CONCRETO: PRE-MOLDADO | MODELO: RETA | PADRAO: PREFEITURA SAO PAULO | ALTURA: 20 CM | LARGURA MAIOR: 8 CM | COMPRIMENTO: 40 CM,,,,
-PDC1,Bimpavi indústria e comércio de artefatos de cimento ltda,null,null,38%,null,null,A similaridade de 37.5% (3 de 8 especificações correspondentes) é inferior ao mínimo de 39% para associação. As dimensões (20x8x40 cm vs 100x30x15 cm) e a quantidade (1521.93 MT vs 1433 MT) são divergentes.,,
-PDC1,Pré-moldados,20.032,84.0,43%,"GUIA DE CONCRETO 6,5X20X60 CM",4,"A associação foi feita com base na correspondência da descrição do produto ('GUIA DE CONCRETO'), tipo de concreto (assumido como 'PRE-MOLDADO' pelo nome da empresa) e altura (20 cm). A similaridade calculada foi de 3/7 (43%). As especificações de largura, comprimento e quantidade não são correspondentes.",,
-PDC1,Drenaltec industria e comercio ltda,49.0,1521.93,50%,MINI GUIA CLASSICO 50 X 20 X 4 >> CINZA NATURAL 120S,4,"A associação foi feita com base na similaridade de 50% (4/8). Os campos que correspondem são: 'Descrição do Produto' (GUIA), 'TIPO CONCRETO' (PRE-MOLDADO vs CLASSICO), 'ALTURA' (20cm) e 'quantidade_demandada' (1521.93 MT).",,
-
-PDC2,RFP,,50.00,,"Descrição do Produto: GUIA CONCRETO-RUAS/AVENIDAS | TIPO CONCRETO: ARMADO | MODELO: REBAIXADA | PADRAO: PREFEITURA SAO PAULO | ALTURA: 30 CM | LARGURA MAIOR: 40 CM | COMPRIMENTO: 60 CM | CARACTERISTICAS ADICIONAIS: COR CINZA CLARO MUNSELL N 6,5",,,,
-PDC2,Bimpavi indústria e comércio de artefatos de cimento ltda,null,null,33%,null,null,"A similaridade de 33.3% (3 de 9 especificações correspondentes) é inferior ao mínimo de 39% para associação. O modelo ('REBAIXADA' vs 'reta'), as dimensões e a quantidade são divergentes.",,
-PDC2,Drenaltec industria e comercio ltda,120.0,1433.0,44%,GUIA PADRÃO PREFEITURA MON 100 X 30 X 15 >> CINZA NATURAL 120S,5,"A associação foi feita com base na similaridade de 44% (4/9). Os campos que correspondem são: 'Descrição do Produto' (GUIA), 'PADRAO' (PREFEITURA), 'ALTURA' (30cm) e 'CARACTERISTICAS ADICIONAIS' (CINZA CLARO vs CINZA NATURAL).",,
-
-PDC3,RFP,,1433.00,,Descrição do Produto: GUIA CONCRETO-RUAS/AVENIDAS | TIPO CONCRETO: PRE-MOLDADO | MODELO: RETA | PADRAO: PREFEITURA SAO PAULO | ALTURA: 30 CM | LARGURA MAIOR: 15 CM | COMPRIMENTO: 100 CM,,,,
-PDC3,Bimpavi indústria e comércio de artefatos de cimento ltda,49.0,1433.0,100%,Guia de concreto reta padrão PMSP 100x30x15cm - AF,3,"A similaridade é de 100%. A descrição ('Guia de concreto'), modelo ('reta'), padrão ('PMSP'), dimensões ('100x30x15cm') e quantidade (1433) do produto ofertado correspondem exatamente às especificações do produto demandado. A unidade de medida da quantidade demandada (MT) é equivalente à unidade ofertada (PC), pois cada peça tem 1 metro de comprimento.",,
-PDC3,Pré-moldados,41.763,1433.0,57%,GUIA DE CONCRETO 14X26X100,1,"A associação foi feita com base na correspondência da descrição do produto ('GUIA DE CONCRETO'), tipo de concreto (assumido como 'PRE-MOLDADO'), comprimento (100 cm) e quantidade (1433 peças, que equivale a 1433 metros lineares). A similaridade calculada foi de 4/7 (57%). As especificações de altura e largura não são correspondentes.",,
-PDC3,Drenaltec industria e comercio ltda,120.0,1433.0,88%,GUIA PADRÃO PREFEITURA MON 100 X 30 X 15 >> CINZA NATURAL 120S,5,"A associação foi feita com base na similaridade de 88% (7/8). Os campos que correspondem são: 'Descrição do Produto' (GUIA), 'TIPO CONCRETO' (PRE-MOLDADO), 'PADRAO' (PREFEITURA), 'ALTURA' (30cm), 'LARGURA MAIOR' (15cm), 'COMPRIMENTO' (100cm) e 'quantidade_demandada' (1433 MT).",,
-
+*******IGNORE ESTA PARTE DO RELATORIO (ela sera eventualmente consultada pelos desenvolvedores deste aplicativo para esclarecer duvidas sobre o comportamento da IA) ,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+Produto 1,,,,,,,,,,,,,,,,
+Descrição do produto demandado na requisição de compra,,,,,Descrição: Argamassa/Rejunte Industrializado; Produto: Argamassa Assentamento; Fabricante: Ecomix; Referencia: Abnt Nbr 14725:2012; Cor: Cinza; Apresentacao: 50 Kg,,,Descrição: Argamassa/Rejunte Industrializado; Produto: Argamassa Assentamento; Fabricante: Ecomix; Referencia: Abnt Nbr 14725:2012; Cor: Cinza; Apresentacao: 50 Kg,,,Descrição: Argamassa/Rejunte Industrializado; Produto: Argamassa Assentamento; Fabricante: Ecomix; Referencia: Abnt Nbr 14725:2012; Cor: Cinza; Apresentacao: 50 Kg,,,Descrição: Argamassa/Rejunte Industrializado; Produto: Argamassa Assentamento; Fabricante: Ecomix; Referencia: Abnt Nbr 14725:2012; Cor: Cinza; Apresentacao: 50 Kg,,
+Descrição do produto oferecido na proposta (que a IA associou a este produto demandado),,,,,Argamassa Ecomix 50 Kg,,,Votomassa Multiplo Uso 50Kg,,,,,,Argamassa Colante Assentamento,,
+Raciocinio usado pela IA para associar este produto demandado com este produto oferecido,,,,,"A associação foi feita com base na semelhança do fabricante ('Ecomix'), tipo de produto ('Argamassa') e apresentação ('50 Kg').",,,A associação foi feita com base na similaridade do tipo de produto ('ARGAMASSA ASSENTAMENTO' vs 'VOTOMASSA MULTIPLO USO') e na apresentação (50KG). A quantidade ofertada (800 SC = 40.000 KG) é diferente da demandada (150.000 KG).,,,,,,"A associação foi feita com base na correspondência do fabricante (ECOMIX) e do tipo de produto (ARGAMASSA ASSENTAMENTO). A quantidade demandada de 150.000 KG é equivalente a 3.000 sacos de 50 KG, o que corresponde à quantidade ofertada de 3.000 unidades.",,
+Semelhança entre o produto demandado e o produto oferecido,,,,,60%,,,42%,,,,,,71%,,
+Quantidade demandada na requisicao de compra,,,,,150000,,,150000,,,150000,,,150000,,
+Quantidade oferecida na proposta,,,,,3000.0,,,800.0,,,,,,3000.0,,
+Unidade da quantidade demandada na requisicao de compra,,,,,KG,,,KG,,,KG,,,KG,,
+Unidade da quantidade oferecida na proposta,,,,,,,,,,,,,,,,
+Preço unitario oferecido na proposta,,,,,36.91,,,29.9,,,,,,28.0,,
+Posição em que o produto aparece na proposta,,,,,1,,,1,,,,,,1,,
+,,,,,,,,,,,,,,,,
+Produto 2,,,,,,,,,,,,,,,,
+Descrição do produto demandado na requisição de compra,,,,,Descrição: Argamassa/Rejunte Industrializado; Produto: Argamassa Colante; Fabricante: Construcola; Referencia: Int/Ext Aciii; Cor: Cinza; Apresentacao: 20 Kg,,,Descrição: Argamassa/Rejunte Industrializado; Produto: Argamassa Colante; Fabricante: Construcola; Referencia: Int/Ext Aciii; Cor: Cinza; Apresentacao: 20 Kg,,,Descrição: Argamassa/Rejunte Industrializado; Produto: Argamassa Colante; Fabricante: Construcola; Referencia: Int/Ext Aciii; Cor: Cinza; Apresentacao: 20 Kg,,,Descrição: Argamassa/Rejunte Industrializado; Produto: Argamassa Colante; Fabricante: Construcola; Referencia: Int/Ext Aciii; Cor: Cinza; Apresentacao: 20 Kg,,
+Descrição do produto oferecido na proposta (que a IA associou a este produto demandado),,,,,Argamassa Quartzolit Cinza 20 Kg,,,Argam.Aciii Votorantim Cinza Flexivel 20Kg,,,Arg.Votoran Aciii Colante.Cinza 20Kg $,,,Aciii Arg. Assent. Super Cinza,,
+Raciocinio usado pela IA para associar este produto demandado com este produto oferecido,,,,,"A associação foi feita com base na semelhança da cor ('Cinza'), apresentação ('20 kg'), quantidade (800 unidades) e tipo de produto ('Argamassa').",,,"A associação foi feita pela alta similaridade nas especificações: tipo de produto ('ARGAMASSA COLANTE' vs 'ARGAM.ACIII'), referência ('ACIII'), cor ('CINZA') e apresentação ('20KG'). A quantidade ofertada (2000 SC) é diferente da demandada (800 SC).",,,"A associação foi feita com base na alta semelhança (71%) entre as especificações. O produto oferecido 'ARG.VOTORAN ACIII COLANTE.CINZA 20KG' corresponde ao demandado 'ARGAMASSA COLANTE', referência 'ACIII', cor 'CINZA' e apresentação '20 KG'. Apenas o fabricante ('VOTORAN' vs 'CONSTRUCOLA') e a quantidade (4800 vs 800) são diferentes.",,,"A associação foi feita com base na correspondência da quantidade (800), referência (ACIII), cor (CINZA) e tipo de produto (ARGAMASSA COLANTE). A única divergência foi o fabricante (ofertado MINERCOLA vs. solicitado CONSTRUCOLA).",,
+Semelhança entre o produto demandado e o produto oferecido,,,,,67%,,,80%,,,71%,,,71%,,
+Quantidade demandada na requisicao de compra,,,,,800,,,800,,,800,,,800,,
+Quantidade oferecida na proposta,,,,,800.0,,,2000.0,,,4800.0,,,800.0,,
+Unidade da quantidade demandada na requisicao de compra,,,,,SC,,,SC,,,SC,,,SC,,
+Unidade da quantidade oferecida na proposta,,,,,,,,,,,,,,,,
+Preço unitario oferecido na proposta,,,,,48.45,,,54.9,,,43.4,,,33.0,,
+Posição em que o produto aparece na proposta,,,,,2,,,2,,,1,,,2,,
+,,,,,,,,,,,,,,,,

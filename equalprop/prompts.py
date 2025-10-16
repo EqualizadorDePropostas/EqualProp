@@ -111,10 +111,10 @@ Siga rigorosamente o formato JSON abaixo:
 """
 
 
-extraction_prompt = """
+proposta_prompt = """
 Execute as seguintes tarefas :
 1) Extraia informacoes do cabeclho da proposta (nome da empresa, telefone, etc)
-2) Associa cada Produto Demandado (PDC) com um dos Ptrodutos Oferecidos (POP) na proposta
+2) Associa cada Produto Demandado (PDC) com um dos Produtos Oferecidos (POP) na proposta
 3) Extraia especificações técnicas de cada Produto Oferecido (POP) que foi associado a um dos Produtos Demandados (PDC)
 4) Extraia informações sobre condições comerciais descritas na proposta (prazo de validade, custo de frete, etc)
 
@@ -128,7 +128,10 @@ Siga os passos abaixo para fazer a associação entre Produtos Demandados (PDCs)
 - Se este mínimo não for alcançado com nenhum Produto Oferecido, não associe nenhum Produto Oferecido a este Produto Demandado e preencha com "null" os campos respectivos (veja estrutura de dados mais abaixo)
 - Se a proposta não tiver informação sobre nenhum Produto Oferecido, não associe nenhum Produto Oferecido a este Produto Demandado e preencha com "null" os campos respectivos (veja estrutura de dados mais abaixo)
 
-Forneça a resposta exatamente no formato json abaixo:
+IMPORTANTE:
+- Sua resposta deve ser APENAS o JSON valido, sem comentarios adicionais
+- Nunca use markdown (```json```) ou texto explicativo
+- Se algum campo estiver ausente, use null conforme o schema
 
 {
   "proposta": {
@@ -150,17 +153,26 @@ Forneça a resposta exatamente no formato json abaixo:
     },
     "pops": [
       {
-        "codigo_pdc": {"type": "str", "description": "Código do PDC associado"},
+        "codigo_pdc": {"type": "str", "description": "Código do PDC ao qual a IA associou este Produto Oferecido"},
         "quantidade": {"type": "float", "description": "Quantidade do Produto Oferecido"},
-        "preco_unitario": {
+        "unidade": {"type": "str", "description": "unidade na qual está expressa a quantidade do Produto Oferecido"},
+        "preco_unitario": {"type": "float", "description": "Preço unitário do Produto Oferecido"},        
+        "preco_unitario_ajustado": {
           "type": "float",
-          "description": "Preço unitário do Produto Oferecido
-          Atenção : confira se o preço unitário oferecido na proposta refere-se à mesma 
-          unidade da quantidade demandada na requisição de compra. Caso contrario faça a devida
-          conversão no preço unitario. Exemplo :
+          "description": "O preço_unitario_ajustado será igual ao preço_unitario quando a unidade
+          da quantidade do Produto Oferecido for igual à unidade da quantidade do Produto Demandado
+          (conforme informado na requisição de compra) 
+          Caso contrario o preco_unitario_ajustado deverá ser calculado conforme os exemplos abaixo:
+          Exemplo 1
+          - A unidade da quantidade demandada na requisição de compra é litros
+          - O preço unitario oferecido na proposta é R$ 20000 por unidade de um metro cúbico
+          - O preço_unitário_ajustado será R$ 20, ou seja, 20000 dividido por 1000 (que é a relação 
+          entre 1 metro cúbico e 1 litro)
+          Exemplo 2
           - A unidade da quantidade demandada na requisição de compra é Kg
-          - O preço unitario oferecido na proposta é R$ 350 e refere-se a um saco de 50 Kg
-          - Voce deve tomar o preço unitário como sendo R$ 7, ou seja, 350 dividido por 50
+          - O preço unitario oferecido na proposta é R$ 350 por unidade de um saco de 50 Kg
+          - O preço_unitário_ajustado será R$ 7, ou seja, 350 dividido por 50 (que é a relação
+          entre 1 saco de 50 Kg e 1 Kg)
         },
         "semelhanca": {
           "type": "str",
@@ -195,16 +207,6 @@ Forneça a resposta exatamente no formato json abaixo:
   }
 }
 """
-
-extraction_prompt_rules = """
-IMPORTANTE:
-- Sua resposta deve ser APENAS o JSON valido, sem comentarios adicionais
-- Nunca use markdown (```json```) ou texto explicativo
-- Se algum campo estiver ausente, use null conforme o schema
-"""
-
-extraction_prompt_with_rules = extraction_prompt_rules + "\n" + extraction_prompt
-
 
 padroniza_condicomer_prompt = """
 Você receberá várias propostas comerciais (como JSON). Sua tarefa é:

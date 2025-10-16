@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sys
 import google.generativeai as genai
 
@@ -25,3 +25,4 @@ def build_gen_config(temperature: float = 0.0, response_mime_type: str = "applic
         temperature=temperature,
         response_mime_type=response_mime_type,
     )
+

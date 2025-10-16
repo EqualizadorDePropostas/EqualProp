@@ -1,44 +1,23 @@
-ï»¿import os
+import os
 import json
 import time
 import google.generativeai as genai
-import base64
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 
 def upload_pdfs_to_gemini(pdf_files):
-    """Faz upload de PDFs para o Gemini.
-
-    Tenta usar a Files API. Se o backend exigir "ragStoreName",
-    faz fallback para inline_data (base64), evitando a rota de RAG.
-    """
+    """Faz upload de PDFs para o Gemini"""
     uploaded_files = []
-
-    def _make_inline_pdf(path: str):
-        with open(path, "rb") as f:
-            data_b64 = base64.b64encode(f.read()).decode("utf-8")
-        return {"inline_data": {"mime_type": "application/pdf", "data": data_b64}}
-
     for pdf_path in pdf_files:
         try:
             file_name = os.path.basename(pdf_path)
             print(f"[INFO] Enviando: {file_name}...")
-            try:
-                uploaded_file = genai.upload_file(
-                    path=pdf_path,
-                    mime_type='application/pdf'
-                )
-                uploaded_files.append(uploaded_file)
-                file_id = getattr(uploaded_file, 'name', None) or getattr(uploaded_file, 'uri', None) or 'sem-id'
-                print(f"[OK] {file_name} enviado! (ID: {file_id})")
-            except Exception as ue:
-                if 'ragStoreName' in str(ue):
-                    print(f"[WARN] Upload falhou por 'ragStoreName'. Usando inline_data para {file_name}.")
-                    inline_obj = _make_inline_pdf(pdf_path)
-                    uploaded_files.append(inline_obj)
-                    print(f"[OK] {file_name} preparado via inline_data.")
-                else:
-                    raise ue
+            uploaded_file = genai.upload_file(
+                path=pdf_path,
+                mime_type='application/pdf'
+            )
+            uploaded_files.append(uploaded_file)
+            print(f"[OK] {file_name} enviado! (ID: {uploaded_file.name})")
         except Exception as e:
             print(f"[ERRO] Erro ao enviar {pdf_path}: {str(e)}")
     return uploaded_files
@@ -71,7 +50,7 @@ def process_all_proposals(model, rfp_json, proposal_files, proposal_paths, promp
             start_time = time.time()
             response = process_proposal_with_retry(model, rfp_json, proposal_file, prompt, gen_config)
             results[proposal_path] = response.text
-            print(f"[OK] Concluido em {time.time() - start_time:.2f}s")
+            print(f"[OK] Concluído em {time.time() - start_time:.2f}s")
         except Exception as e:
             print(f"[ERRO] Falha ao processar {proposal_path}: {str(e)}")
             results[proposal_path] = None

@@ -1,115 +1,203 @@
-import json
 import csv
+import json
+import re
+from typing import Any, Dict, Iterable, List, Tuple
+
+from .globals import _normalize_rfp
+
+_PREFIX_RE = re.compile(r'^\s*descri(?:\u00e7\u00e3o|cao)\s+do\s+produto\s*[:\-]?\s*', re.IGNORECASE)
 
 
-def generate_comparison_report(rfp_json, propostas_json, filename="comparacao_produtos.csv"):
-    """Gera relatório de comparação de produtos.
+def _clean_description(text: Any) -> str:
+    if not text:
+        return ''
+    return _PREFIX_RE.sub('', str(text)).strip()
 
-    Robusto para diferentes formatos de rfp_json e para propostas_json como
-    dict de caminho->string JSON (com raiz 'proposta').
-    """
-    processed_proposals = []
-    for proposal_json in propostas_json.values():
-        if not proposal_json:
+
+def _stringify(value: Any) -> str:
+    if value is None:
+        return ''
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, dict):
+        if 'valor' in value:
+            return _stringify(value.get('valor'))
+        if 'descricao' in value:
+            return _stringify(value.get('descricao'))
+    return str(value)
+
+
+def _rfp_entries(rfp_json: Any) -> List[Any]:
+    obj = rfp_json
+    if isinstance(obj, dict):
+        if 'rfp json' in obj:
+            obj = obj.get('rfp json') or {}
+        elif 'rfp_json' in obj:
+            obj = obj.get('rfp_json') or {}
+    if isinstance(obj, dict):
+        items = obj.get('produtos_demandados') or obj.get('produtos demandados')
+    elif isinstance(obj, list):
+        items = obj
+    else:
+        items = []
+    return items if isinstance(items, list) else []
+
+
+def _rfp_description(pdc: Any) -> str:
+    if isinstance(pdc, str):
+        return _clean_description(pdc)
+    if isinstance(pdc, dict):
+        for key in ('descricao', 'descricao_produto', 'descricao_produto_demandado', 'descricao_demandada'):
+            val = pdc.get(key)
+            if val:
+                return _clean_description(_stringify(val))
+        espec = pdc.get('especificacoes_tecnicas')
+        if isinstance(espec, dict):
+            parts = []
+            for key, val in espec.items():
+                if isinstance(val, dict):
+                    valor = _stringify(val.get('valor'))
+                    unidade = _stringify(val.get('unidade'))
+                    if valor:
+                        parts.append(f"{key}: {valor}{(' ' + unidade) if unidade else ''}")
+                else:
+                    sval = _stringify(val)
+                    if sval:
+                        parts.append(f"{key}: {sval}")
+            if parts:
+                return _clean_description('; '.join(parts))
+    return ''
+
+
+def _rfp_quantity(pdc: Dict[str, Any]) -> Tuple[str, str]:
+    qtd = pdc.get('quantidade_demandada') if isinstance(pdc, dict) else None
+    if isinstance(qtd, dict):
+        return _stringify(qtd.get('valor')), _stringify(qtd.get('unidade'))
+    return '', ''
+
+
+def _pop_value(pop: Dict[str, Any], *keys: Iterable[str]) -> str:
+    if not isinstance(pop, dict):
+        return ''
+    for key in keys:
+        if isinstance(key, Iterable) and not isinstance(key, (str, bytes)):
+            for sub in key:
+                val = pop.get(sub)
+                if val not in (None, '', [], {}):
+                    return _stringify(val)
             continue
-        try:
-            data = json.loads(proposal_json) if isinstance(proposal_json, str) else proposal_json
-            if isinstance(data, dict) and 'proposta' in data:
-                processed_proposals.append(data['proposta'])
-        except Exception:
-            continue
+        val = pop.get(key)
+        if val not in (None, '', [], {}):
+            return _stringify(val)
+    return ''
 
-    # Normalizar RFP: obter lista de PDCs
-    pdcs = None
-    if isinstance(rfp_json, dict):
-        root = rfp_json
-        if 'rfp json' in root:
-            root = root.get('rfp json') or {}
-        elif 'rfp_json' in root:
-            root = root.get('rfp_json') or {}
-        if isinstance(root, dict):
-            pdcs = root.get('produtos_demandados') or root.get('produtos demandados')
-    elif isinstance(rfp_json, list):
-        pdcs = rfp_json
-    if not isinstance(pdcs, list):
-        pdcs = []
 
-    from .globals import extract_quantity
+def _pop_quantity(pop: Dict[str, Any]) -> Tuple[str, str]:
+    if not isinstance(pop, dict):
+        return '', ''
+    qtd = pop.get('quantidade_oferecida') or pop.get('quantidade')
+    if isinstance(qtd, dict):
+        return _stringify(qtd.get('valor')), _stringify(qtd.get('unidade'))
+    return _stringify(qtd), ''
 
-    # Montar base por código do PDC
-    pdcs_data = {}
-    for idx, pdc in enumerate(pdcs, start=1):
-        if isinstance(pdc, dict):
-            pdc_code = pdc.get('codigo') or f'PDC{idx}'
-            espec = pdc.get('especificacoes_tecnicas') or pdc.get('especificacoes tecnicas') or {}
-            if isinstance(espec, dict):
-                parts = []
-                for k, v in espec.items():
-                    if isinstance(v, dict):
-                        val = v.get('valor')
-                        uni = v.get('unidade', 'null')
-                        parts.append(f"{k}: {val} {uni}" if uni and uni != 'null' else f"{k}: {val}")
-                    else:
-                        parts.append(f"{k}: {v}")
-                clean_desc = ' | '.join(parts)
-            else:
-                clean_desc = ''
-            qtd_demandada = extract_quantity(pdc)
-        else:
-            pdc_code = f'PDC{idx}'
-            clean_desc = str(pdc)
-            qtd_demandada = extract_quantity(pdc)
 
-        pdcs_data[pdc_code] = {
-            'rfp_data': {
-                'quantidade': f"{qtd_demandada:.2f}" if isinstance(qtd_demandada, (int, float)) else 'null',
-                'descricao': clean_desc
-            },
-            'proposals': []
-        }
+def _row(label: str, values: List[str]) -> List[str]:
+    row = [label, '', '', '', '']
+    for val in values:
+        row.extend([val, '', ''])
+    return row
 
-    # Anexar propostas
-    for proposal in processed_proposals:
-        try:
-            empresa = (proposal.get('header', {}) or {}).get('empresa')
-            empresa_fmt = empresa.capitalize() if isinstance(empresa, str) else 'null'
-        except Exception:
-            empresa_fmt = 'null'
-        for pop in proposal.get('pops', []) if isinstance(proposal, dict) else []:
-            if not isinstance(pop, dict):
+
+def generate_comparison_report(rfp_json: Dict[str, Any], propostas_json: Dict[str, Any], filename: str = 'comparacao_produtos.csv') -> None:
+    raw_pdcs = _rfp_entries(rfp_json)
+    pdcs = _normalize_rfp(rfp_json) if rfp_json else []
+
+    proposals: List[Dict[str, Any]] = []
+    if isinstance(propostas_json, dict):
+        for value in propostas_json.values():
+            if not value:
                 continue
-            codigo = pop.get('codigo_pdc')
-            if codigo and codigo in pdcs_data:
-                pdcs_data[codigo]['proposals'].append({
-                    'empresa': empresa_fmt,
-                    'preco_unitario': pop.get('preco_unitario') if pop.get('preco_unitario') not in [None, 'null'] else 'null',
-                    'quantidade': pop.get('quantidade') if pop.get('quantidade') not in [None, 'null'] else 'null',
-                    'semelhanca': pop.get('semelhanca') if pop.get('semelhanca') not in [None, 'null'] else 'null',
-                    'descricao': pop.get('descricao') if pop.get('descricao') not in [None, 'null'] else 'null',
-                    'num_ordem': pop.get('num_ordem') if pop.get('num_ordem') not in [None, 'null'] else 'null',
-                    'reasoning': pop.get('reasoning', 'null'),
-                })
+            try:
+                data = json.loads(value) if isinstance(value, str) else value
+            except Exception:
+                continue
+            if isinstance(data, dict):
+                proposta = data.get('proposta') if 'proposta' in data else data
+                if isinstance(proposta, dict):
+                    proposals.append(proposta)
+    proposals = proposals[:20]
 
-    # Escrever CSV
-    with open(filename, 'w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerow(["*******IGNORE ESTA PARTE DO RELATORIO (ela será eventualmente consultada pelos desenvolvedores deste aplicativo para esclarecer duvidas sobre o comportamento da IA) ", "", "", "", "", "", "", "", "", ""])
-        writer.writerow(["Cod Produto", "Fornecedor", "Preço_unitario", "Quantidade", "Semelhança", "Descrição", "Num_ordem", "Reasoning", "", ""])
-        writer.writerow([])
+    associations: List[Tuple[Dict[str, Any], Dict[str, int]]] = []
+    for proposta in proposals:
+        mapping: Dict[str, Any] = {}
+        positions: Dict[str, int] = {}
+        pops = proposta.get('pops') if isinstance(proposta, dict) else []
+        if isinstance(pops, list):
+            for idx, pop in enumerate(pops, 1):
+                if not isinstance(pop, dict):
+                    continue
+                codigo = pop.get('codigo_pdc') or pop.get('codigo')
+                if codigo and codigo not in mapping:
+                    mapping[codigo] = pop
+                    positions[codigo] = pop.get('posicao') or idx
+        associations.append((mapping, positions))
 
-        for pdc_code, pdc_data in pdcs_data.items():
-            writer.writerow([
-                pdc_code, 'RFP', '', pdc_data['rfp_data']['quantidade'], '',
-                pdc_data['rfp_data']['descricao'], '', '', '', ''
-            ])
-            for proposal in pdc_data['proposals']:
-                writer.writerow([
-                    pdc_code, proposal['empresa'], proposal['preco_unitario'],
-                    proposal['quantidade'], proposal['semelhanca'], proposal['descricao'],
-                    proposal['num_ordem'], proposal['reasoning'], '', ''
-                ])
-            writer.writerow([])
+    total_cols = 1 + 4 + 3 * len(proposals)
+    header_msg = '*******IGNORE ESTA PARTE DO RELATORIO (ela sera eventualmente consultada pelos desenvolvedores deste aplicativo para esclarecer duvidas sobre o comportamento da IA) '
 
-    return filename
+    with open(filename, 'w', newline='', encoding='utf-8') as handle:
+        writer = csv.writer(handle)
+        writer.writerow([header_msg] + [''] * (total_cols - 1))
+        writer.writerow([''] * total_cols)
 
-    return filename
+        for idx, pdc in enumerate(pdcs, 1):
+            raw = raw_pdcs[idx - 1] if idx - 1 < len(raw_pdcs) else pdc
+            codigo = pdc.get('codigo') if isinstance(pdc, dict) else ''
+            desc_rfp = _rfp_description(raw) or _rfp_description(pdc)
+            if not desc_rfp and not isinstance(raw, dict):
+                desc_rfp = _clean_description(_stringify(raw))
+            # Title-case the demanded product description
+            if desc_rfp:
+                desc_rfp = desc_rfp.title()
+            qtd_val, qtd_unit = _rfp_quantity(pdc if isinstance(pdc, dict) else {})
+
+            writer.writerow([f'Produto {idx}'] + [''] * (total_cols - 1))
+            writer.writerow(_row('Descrição do produto demandado na requisição de compra', [desc_rfp] * len(proposals)))
+
+            desc_oferta: List[str] = []
+            raciocinio_vals: List[str] = []
+            semelhanca_vals: List[str] = []
+            qtd_oferecida_vals: List[str] = []
+            preco_unitario_vals: List[str] = []
+            pos_vals: List[str] = []
+
+            for mapping, positions in associations:
+                pop = mapping.get(codigo)
+                oferta_descr = _pop_value(pop, 'descricao_produto_oferecido', 'descricao_produto', 'descricao', 'produto_oferecido', 'produto')
+                # Title-case the offered product description (associated to this demanded product)
+                if oferta_descr:
+                    oferta_descr = oferta_descr.title()
+                desc_oferta.append(oferta_descr)
+                raciocinio_vals.append(_pop_value(pop, 'reasoning', 'raciocinio', 'explicacao', 'justificativa'))
+                semelhanca_vals.append(_pop_value(pop, 'semelhanca', 'grau_semelhanca', 'similaridade'))
+                qtd_val_of, qtd_unit_of = _pop_quantity(pop)
+                qtd_oferecida_vals.append(qtd_val_of)
+                preco_unitario_vals.append(_pop_value(pop, 'preco_unitario', 'valor_unitario', 'preco', 'preco_oferecido'))
+                pos_val = _pop_value(pop, 'posicao')
+                if not pos_val:
+                    pos_val = _stringify(positions.get(codigo)) if positions.get(codigo) else ''
+                pos_vals.append(pos_val)
+
+            writer.writerow(_row('Descrição do produto oferecido na proposta (que a IA associou a este produto demandado)', desc_oferta))
+            writer.writerow(_row('Raciocinio usado pela IA para associar este produto demandado com este produto oferecido', raciocinio_vals))
+            writer.writerow(_row('Semelhança entre o produto demandado e o produto oferecido', semelhanca_vals))
+            writer.writerow(_row('Quantidade demandada na requisicao de compra', [qtd_val] * len(proposals)))
+            writer.writerow(_row('Quantidade oferecida na proposta', qtd_oferecida_vals))
+            writer.writerow(_row('Unidade da quantidade demandada na requisicao de compra', [qtd_unit] * len(proposals)))
+            writer.writerow(_row('Unidade da quantidade oferecida na proposta', [''] * len(proposals)))
+            writer.writerow(_row('Preço unitario oferecido na proposta', preco_unitario_vals))
+            writer.writerow(_row('Posição em que o produto aparece na proposta', pos_vals))
+            writer.writerow([''] * total_cols)
+
+        if not pdcs:
+            writer.writerow([''] * total_cols)

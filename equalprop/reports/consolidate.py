@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import re
 import openpyxl
 import os
@@ -158,7 +158,7 @@ def consolidate_reports(rfp_json=None, propostas_json=None, condicomer_padroniza
             except Exception as copy_err:
                 print(f"[AVISO] Nao foi possivel atualizar {logical_name}: {copy_err}")
 
-    # Substituir esta se��o (linhas ~60-80) por:
+    # Substituir esta seção (linhas ~60-80) por:
     for nome in (
         "relatorio_rfp_cabecalho.csv",
         "relatorio_fornecedores.csv",
@@ -170,13 +170,13 @@ def consolidate_reports(rfp_json=None, propostas_json=None, condicomer_padroniza
         dst = os.path.join(out_dir, nome)
         try:
             if os.path.exists(src):
-                # SEM verifica��o de timestamp - sempre mover se existir
+                # SEM verificação de timestamp - sempre mover se existir
                 if not os.path.exists(dst):
                     shutil.move(src, dst)
         except Exception:
             pass
 
-    # N�O mover relatorio_condicomer.csv pois j� foi gerado direto no out_dir
+    # NÃO mover relatorio_condicomer.csv pois já foi gerado direto no out_dir
 
     
     tabela_specs = [
@@ -615,10 +615,65 @@ def consolidate_reports(rfp_json=None, propostas_json=None, condicomer_padroniza
                     if isinstance(value, str) and value.strip().lower() == 'sim':
                         cell.fill = red_fill
 
-    # Primeira linha do comparacao_produtos
+    # Primeira linha do comparacao_produtos + formatacoes especificas
     sec = by_name.get('comparacao_produtos.csv')
     if sec:
+        # 1) Cabeçalho da seção em azul negrito
         _style_header_row(sec)
+
+        start_row = sec['start']
+        end_row = sec['start'] + sec['rows'] - 1
+        ncols = sec.get('first_cols') or sheet.max_column
+
+        # 2) Em todas as linhas, mergear as trincas (por proposta),
+        #    manter conteúdo da célula da esquerda e alinhar topo/esquerda com wrap
+        wrap_top_left = Alignment(horizontal='left', vertical='top', wrap_text=True)
+        for rr in range(start_row, end_row + 1):
+            c = 6
+            while c + 2 <= ncols:
+                # Fazer o merge do trio de colunas da proposta
+                sheet.merge_cells(start_row=rr, start_column=c, end_row=rr, end_column=c + 2)
+                # Aplicar alinhamento na célula da esquerda
+                left_cell = sheet.cell(row=rr, column=c)
+                if left_cell.value is None:
+                    left_cell.value = ''
+                left_cell.alignment = wrap_top_left
+                # Borda direita preta e grossa no limite direito da trinca
+                right_cell = sheet.cell(row=rr, column=c + 2)
+                b = right_cell.border
+                right_cell.border = Border(left=b.left, right=Side(border_style='thick', color='000000'), top=b.top, bottom=b.bottom)
+                c += 3
+
+        # 3) Altura de linha 6x o default para as 3 primeiras linhas de cada produto
+        #    (Descrição do produto demandado, Descrição do produto oferecido, Raciocínio da IA)
+        #    e alinhamento topo/esquerda com wrap em TODAS as células dessas linhas.
+        try:
+            default_h = getattr(sheet.sheet_format, 'defaultRowHeight', None) or 15
+        except Exception:
+            default_h = 15
+        tall_h = default_h * 6
+        for rr in range(start_row, end_row + 1):
+            label = sheet.cell(row=rr, column=1).value
+            if not isinstance(label, str):
+                continue
+            s = label.strip().lower()
+            # Identificar somente as 3 linhas principais por prefixo, evitando aumentar "Semelhança ..."
+            is_main_three = s.startswith('descri') or s.startswith('raciocinio')
+            if is_main_three:
+                sheet.row_dimensions[rr].height = tall_h
+                # Alinhar todas as células da linha (coluna 1 sem wrap, demais com wrap)
+                for cc in range(1, ncols + 1):
+                    cell = sheet.cell(row=rr, column=cc)
+                    if cc == 1:
+                        cell.alignment = Alignment(horizontal='left', vertical='top', wrap_text=False)
+                    else:
+                        cell.alignment = wrap_top_left
+
+        # 4) Azul negrito para a primeira coluna com "Produto 1", "Produto 2", etc
+        for rr in range(start_row, end_row + 1):
+            v = sheet.cell(row=rr, column=1).value
+            if isinstance(v, str) and re.match(r'(?i)\s*produto\s+\d+\s*$', v.strip()):
+                sheet.cell(row=rr, column=1).font = bold_navy
 
     # 7) Largura da coluna C ~320px (aprox width=45)
     sheet.column_dimensions['C'].width = 45
@@ -644,6 +699,7 @@ def consolidate_reports(rfp_json=None, propostas_json=None, condicomer_padroniza
     abs_xlsx = os.path.abspath(xlsx_path)
     print(f"[OK] Relatorio consolidado: {abs_csv} e {abs_xlsx}")
     return abs_csv, abs_xlsx
+
 
 
 

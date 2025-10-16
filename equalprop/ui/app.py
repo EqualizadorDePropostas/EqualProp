@@ -4,7 +4,7 @@ import tempfile
 import streamlit as st
 import csv
 from equalprop.io_utils import sanitize_filename, process_files
-from equalprop.prompts import rfp_prompt, extraction_prompt_with_rules, padroniza_condicomer_prompt, socio_comum_prompt
+from equalprop.prompts import rfp_prompt, proposta_prompt, padroniza_condicomer_prompt, socio_comum_prompt
 from equalprop.gemini_service import upload_pdfs_to_gemini, process_all_proposals
 from equalprop.captura_socios import get_quadro_societario_for_list
 from equalprop.reports.consolidate import consolidate_reports
@@ -288,7 +288,7 @@ def main(model, gen_config):
                         rfp_json,
                         [gfile],          # uma proposta por vez
                         [pdf_path],
-                        extraction_prompt_with_rules,
+                        proposta_prompt,
                         gen_config
                     )
                     aggregated_results = _merge_results(aggregated_results, partial)
@@ -437,4 +437,3 @@ def main(model, gen_config):
             if _dangerize("Interromper", key="btn_abort_done"):
                 _reset_all()
         return
-
