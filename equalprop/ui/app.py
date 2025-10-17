@@ -68,6 +68,8 @@ def _ensure_state():
     st.session_state.setdefault("rfp_file", None)
     st.session_state.setdefault("proposal_files", [])
     st.session_state.setdefault("report_xlsx", None)
+    # versão para resetar o uploader adicional na TELA 2
+    st.session_state.setdefault("prop_add_upl_version", 0)
 
 def _reset_all():
     for k in list(st.session_state.keys()):
@@ -104,7 +106,7 @@ def _selected_line(label_text, value_text, clear_key):
             unsafe_allow_html=True
         )
     with c2:
-        if st.button("?", key=clear_key):
+        if st.button("x", key=clear_key):
             if clear_key == "clear_rfp":
                 st.session_state["rfp_file"] = None
             else:
@@ -186,6 +188,27 @@ def main(model, gen_config):
         _selected_line("Requisição de compra (um PDF)", _join_names(st.session_state["rfp_file"]), "clear_rfp")
         _selected_line("Propostas comerciais (de um a vinte PDFs)", _join_names(st.session_state["proposal_files"]), "clear_props")
 
+        # Linha fixa: texto à esquerda e uploader à direita
+        c_lbl, c_upl = st.columns([0.75, 0.25], vertical_alignment="center")
+        with c_lbl:
+            st.markdown('<div class="row"><span class="label">Adicionar propostas :</span></div>', unsafe_allow_html=True)
+        with c_upl:
+            new_files = st.file_uploader(
+                "Adicionar propostas",
+                type=["pdf"],
+                accept_multiple_files=True,
+                key=f"prop_add_upl_{st.session_state.get('prop_add_upl_version', 0)}",
+                label_visibility="collapsed",
+            )
+        if new_files:
+            existing = st.session_state.get("proposal_files", [])
+            existing_names = {getattr(f, 'name', None) for f in existing}
+            merged = existing + [f for f in new_files if getattr(f, 'name', None) not in existing_names]
+            st.session_state["proposal_files"] = merged
+            st.session_state["prop_add_upl_version"] = st.session_state.get("prop_add_upl_version", 0) + 1
+            st.rerun()
+
+        # Ações principais (gerar/interromper)
         c1, c2 = st.columns([0.18, 0.18])
         with c1:
             if st.button("Gerar relatório", key="btn_run", use_container_width=True):

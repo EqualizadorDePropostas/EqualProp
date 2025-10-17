@@ -669,11 +669,14 @@ def consolidate_reports(rfp_json=None, propostas_json=None, condicomer_padroniza
                     else:
                         cell.alignment = wrap_top_left
 
-        # 4) Azul negrito para a primeira coluna com "Produto 1", "Produto 2", etc
+        # 4) Azul negrito para a primeira coluna com
+        #    "Produto demandado 1", "Produto demandado 2", etc
         for rr in range(start_row, end_row + 1):
             v = sheet.cell(row=rr, column=1).value
-            if isinstance(v, str) and re.match(r'(?i)\s*produto\s+\d+\s*$', v.strip()):
-                sheet.cell(row=rr, column=1).font = bold_navy
+            if isinstance(v, str):
+                s = v.strip()
+                if re.match(r'(?i)\s*produto\s+demandado\s+\d+\s*$', s):
+                    sheet.cell(row=rr, column=1).font = bold_navy
 
     # 7) Largura da coluna C ~320px (aprox width=45)
     sheet.column_dimensions['C'].width = 45
@@ -699,6 +702,7 @@ def consolidate_reports(rfp_json=None, propostas_json=None, condicomer_padroniza
     abs_xlsx = os.path.abspath(xlsx_path)
     print(f"[OK] Relatorio consolidado: {abs_csv} e {abs_xlsx}")
     return abs_csv, abs_xlsx
+
 
 
 

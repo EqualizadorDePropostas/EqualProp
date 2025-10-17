@@ -90,8 +90,13 @@ Siga rigorosamente o formato JSON abaixo:
                   "description": "Quantidade demandada ou solicitada (pode ser texto ou número)"
                 },
                 "unidade": {
-                  "type": "string",
-                  "description": "Unidade da quantidade demandada (preencher com null se não existir)",
+                  "type": "str",
+                  "description": "unidade na qual está expressa a quantidade do Produto Demandado.
+                  - exemplos de unidade de massa : kg, tonelada, saco de 20 kg
+                  - exemplos de unidade de volume: litro, metro cúbico, galão de 5 litros, etc
+                  - exemplos de unidade de comprimento : metro, centimetro, barra de 3 metros, etc
+                  - exemplos de unidade genérica : unidade, caixa com 12 unidades, etc
+                  - exemplos de unidade de outras grandezas : mPA, watts, etc",
                   "default": null
                 }
               },
@@ -153,15 +158,24 @@ IMPORTANTE:
     },
     "pops": [
       {
-        "codigo_pdc": {"type": "str", "description": "Código do PDC ao qual a IA associou este Produto Oferecido"},
+        "codigo_pdc": {"type": "str", "description": "Código do Produto Demandado ao qual a IA associou este Produto Oferecido"},
         "quantidade": {"type": "float", "description": "Quantidade do Produto Oferecido"},
-        "unidade": {"type": "str", "description": "unidade na qual está expressa a quantidade do Produto Oferecido"},
+        "unidade": {
+          "type": "str",
+          "description": "unidade na qual está expressa a quantidade do Produto Oferecido. 
+          Preencher com null caso a unidade não seja encontrada
+          - exemplos de unidade de massa : kg, tonelada, saco de 20 kg
+          - exemplos de unidade de volume: litro, metro cúbico, galão de 5 litros, etc
+          - exemplos de unidade de comprimento : metro, centimetro, barra de 3 metros, etc
+          - exemplos de unidade genérica : unidade, caixa com 12 unidades, etc
+          - exemplos de unidade de outras grandezas : mPA, watts, etc"
+        },
         "preco_unitario": {"type": "float", "description": "Preço unitário do Produto Oferecido"},        
         "preco_unitario_ajustado": {
           "type": "float",
-          "description": "O preço_unitario_ajustado será igual ao preço_unitario quando a unidade
-          da quantidade do Produto Oferecido for igual à unidade da quantidade do Produto Demandado
-          (conforme informado na requisição de compra) 
+          "description": "O preço_unitario_ajustado será igual ao preço_unitario quando :
+          - a unidade da quantidade do Produto Oferecido for igual à unidade da quantidade do Produto Demandado
+          - for desconhecida a unidade da quantidade do Produto Oferecido e/ou do Produto Demandado
           Caso contrario o preco_unitario_ajustado deverá ser calculado conforme os exemplos abaixo:
           Exemplo 1
           - A unidade da quantidade demandada na requisição de compra é litros

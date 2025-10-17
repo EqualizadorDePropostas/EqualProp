@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import json
 import re
 from typing import Any, Dict, Iterable, List, Tuple
@@ -92,13 +92,17 @@ def _pop_value(pop: Dict[str, Any], *keys: Iterable[str]) -> str:
     return ''
 
 
+
 def _pop_quantity(pop: Dict[str, Any]) -> Tuple[str, str]:
     if not isinstance(pop, dict):
         return '', ''
     qtd = pop.get('quantidade_oferecida') or pop.get('quantidade')
+    unit_fallback = _stringify(pop.get('unidade'))
     if isinstance(qtd, dict):
-        return _stringify(qtd.get('valor')), _stringify(qtd.get('unidade'))
-    return _stringify(qtd), ''
+        val = _stringify(qtd.get('valor'))
+        unit = _stringify(qtd.get('unidade')) or unit_fallback
+        return val, unit
+    return _stringify(qtd), unit_fallback
 
 
 def _row(label: str, values: List[str]) -> List[str]:
@@ -106,6 +110,11 @@ def _row(label: str, values: List[str]) -> List[str]:
     for val in values:
         row.extend([val, '', ''])
     return row
+
+
+def _nullify(values: List[str]) -> List[str]:
+    """Replace missing entries with 'null' for CSV output."""
+    return ['null' if (v is None or v == '') else v for v in values]
 
 
 def generate_comparison_report(rfp_json: Dict[str, Any], propostas_json: Dict[str, Any], filename: str = 'comparacao_produtos.csv') -> None:
@@ -161,13 +170,15 @@ def generate_comparison_report(rfp_json: Dict[str, Any], propostas_json: Dict[st
                 desc_rfp = desc_rfp.title()
             qtd_val, qtd_unit = _rfp_quantity(pdc if isinstance(pdc, dict) else {})
 
-            writer.writerow([f'Produto {idx}'] + [''] * (total_cols - 1))
-            writer.writerow(_row('Descrição do produto demandado na requisição de compra', [desc_rfp] * len(proposals)))
+            writer.writerow([f'Produto demandado {idx}'] + [''] * (total_cols - 1))
+            writer.writerow(_row('Descricao do produto demandado na requisicao de compra', _nullify([desc_rfp] * len(proposals))))
 
             desc_oferta: List[str] = []
             raciocinio_vals: List[str] = []
             semelhanca_vals: List[str] = []
             qtd_oferecida_vals: List[str] = []
+            unidade_oferecida_vals: List[str] = []
+            preco_unitario_ajustado_vals: List[str] = []
             preco_unitario_vals: List[str] = []
             pos_vals: List[str] = []
 
@@ -182,22 +193,29 @@ def generate_comparison_report(rfp_json: Dict[str, Any], propostas_json: Dict[st
                 semelhanca_vals.append(_pop_value(pop, 'semelhanca', 'grau_semelhanca', 'similaridade'))
                 qtd_val_of, qtd_unit_of = _pop_quantity(pop)
                 qtd_oferecida_vals.append(qtd_val_of)
+                unidade_oferecida_vals.append(qtd_unit_of)
                 preco_unitario_vals.append(_pop_value(pop, 'preco_unitario', 'valor_unitario', 'preco', 'preco_oferecido'))
+                preco_unitario_ajustado_vals.append(_pop_value(pop, 'preco_unitario_ajustado'))
                 pos_val = _pop_value(pop, 'posicao')
                 if not pos_val:
                     pos_val = _stringify(positions.get(codigo)) if positions.get(codigo) else ''
                 pos_vals.append(pos_val)
 
-            writer.writerow(_row('Descrição do produto oferecido na proposta (que a IA associou a este produto demandado)', desc_oferta))
-            writer.writerow(_row('Raciocinio usado pela IA para associar este produto demandado com este produto oferecido', raciocinio_vals))
-            writer.writerow(_row('Semelhança entre o produto demandado e o produto oferecido', semelhanca_vals))
-            writer.writerow(_row('Quantidade demandada na requisicao de compra', [qtd_val] * len(proposals)))
-            writer.writerow(_row('Quantidade oferecida na proposta', qtd_oferecida_vals))
-            writer.writerow(_row('Unidade da quantidade demandada na requisicao de compra', [qtd_unit] * len(proposals)))
-            writer.writerow(_row('Unidade da quantidade oferecida na proposta', [''] * len(proposals)))
-            writer.writerow(_row('Preço unitario oferecido na proposta', preco_unitario_vals))
-            writer.writerow(_row('Posição em que o produto aparece na proposta', pos_vals))
+            writer.writerow(_row('Descricao do produto oferecido na proposta (o qual a IA associou a este produto demandado)', _nullify(desc_oferta)))
+            writer.writerow(_row('Raciocinio usado pela IA para associar este produto demandado com este produto oferecido', _nullify(raciocinio_vals)))
+            writer.writerow(_row('Semelhanca entre o produto demandado e o produto oferecido', _nullify(semelhanca_vals)))
+            writer.writerow(_row('Quantidade demandada na requisicao de compra', _nullify([qtd_val] * len(proposals))))
+            writer.writerow(_row('Quantidade oferecida na proposta', _nullify(qtd_oferecida_vals)))
+            writer.writerow(_row('Unidade da quantidade demandada na requisicao de compra', _nullify([qtd_unit] * len(proposals))))
+            writer.writerow(_row('Unidade da quantidade oferecida na proposta', _nullify(unidade_oferecida_vals)))
+            writer.writerow(_row('Preco unitario oferecido na proposta', _nullify(preco_unitario_vals)))
+            writer.writerow(_row('Preco unitario ajustado (para quando sao diferentes as unidades da requisicao e da proposta)', _nullify(preco_unitario_ajustado_vals)))
+            writer.writerow(_row('Posicao em que o produto aparece na proposta', _nullify(pos_vals)))
             writer.writerow([''] * total_cols)
 
         if not pdcs:
             writer.writerow([''] * total_cols)
+
+
+
+
